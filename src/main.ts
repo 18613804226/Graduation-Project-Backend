@@ -1,6 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 async function bootstrap() {
+  // 根据 NODE_ENV 决定是否加载 .env 文件
+  const envFile =
+    process.env.NODE_ENV === 'development'
+      ? '.env.development'
+      : '.env.production';
+
+  if (envFile && fs.existsSync(envFile)) {
+    dotenv.config({ path: envFile });
+  }
   // / 根据环境设置 CORS
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5777';
   const app = await NestFactory.create(AppModule);
