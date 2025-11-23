@@ -2,9 +2,8 @@
 import { Controller, Post, Body, Get, Req } from '@nestjs/common';
 import type { Request } from 'express'; // 👈 用 import type
 import { AuthService } from './auth.service';
-import { success } from '../common/dto/response.dto'; // 👈 导入
+import { success, fail } from '../common/dto/response.dto'; // 👈 导入
 import { UserService } from '../user/user.service'; // 👈 新增导入
-
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -19,7 +18,7 @@ export class AuthController {
       body.password,
     );
     if (!user) {
-      throw new Error('用户名或密码错误');
+      return fail('用户名或密码错误'); // ✅ 使用统一的失败响应格式
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     // return { accessToken: user.accessToken };

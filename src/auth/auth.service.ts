@@ -17,18 +17,34 @@ export class AuthService {
       where: { username },
     });
     if (!user) {
-      console.log('❌ 用户不存在:', username);
+      console.log(`❌ 用户不存在: ${username}`);
       return null;
+    }
+    try {
+      if (await bcrypt.compare(password, user.password)) {
+        const payload = { id: user.id, username: user.username };
+        const accessToken = jwt.sign(payload, 'your-secret-key', {
+          expiresIn: '1h',
+        });
+        return {
+          ...user,
+          accessToken,
+        };
+      }
+    } catch (error) {
+      console.error('❌ 密码比对失败:', error);
     }
     console.log('🔍 查到的用户:', user);
     console.log('🔑 输入的密码:', password);
     console.log('🔒 数据库存的密码:', user?.password);
-    console.log('❓ 是 bcrypt 格式吗?', user?.password?.startsWith('$2'));
+    // console.log('❓ 是 bcrypt 格式吗?', user?.password?.startsWith('$2'));
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     if (user && (await bcrypt.compare(password, user.password))) {
-       // 生成真实 JWT
-    const payload = { id: user.id, username: user.username };
-    const accessToken = jwt.sign(payload, 'your-secret-key', { expiresIn: '1h' });
+      // 生成真实 JWT
+      const payload = { id: user.id, username: user.username };
+      const accessToken = jwt.sign(payload, 'your-secret-key', {
+        expiresIn: '1h',
+      });
       return {
         ...user,
         accessToken: accessToken, // 实际项目应生成真实 JWT

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './exception.filter';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 async function bootstrap() {
@@ -26,9 +27,9 @@ async function bootstrap() {
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3000);
-
+  app.useGlobalFilters(new AllExceptionsFilter());
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
 
-  console.log('=============后端服务启动成功==========');
+  console.log('✅=============后端服务启动成功==========✅');
 }
 bootstrap();

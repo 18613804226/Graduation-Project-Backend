@@ -20,7 +20,7 @@ async function main() {
         password: hashedPassword,
       },
     });
-    console.log('✅ 成功创建管理员用户: admin / admin123');
+    console.log('✅ 成功创建管理员用户: admin / 123456');
   } else {
     console.log('ℹ️ 管理员用户已存在，跳过创建');
   }
