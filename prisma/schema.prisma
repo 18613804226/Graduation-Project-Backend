@@ -1,11 +1,12 @@
 // prisma/schema.prisma（完整代码，直接全选替换）
 generator client {
   provider = "prisma-client-js"
+  config = { dataProxy: false }
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") 
+  url      = env("DATABASE_URL")
 }
 
 model User {
