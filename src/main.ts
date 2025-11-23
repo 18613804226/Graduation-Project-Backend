@@ -11,7 +11,11 @@ async function bootstrap() {
 
   if (envFile && fs.existsSync(envFile)) {
     dotenv.config({ path: envFile });
+    console.log(`✅ Loaded ${envFile}`);
+  } else {
+    console.warn(`⚠️ ${envFile} not found`);
   }
+
   // / 根据环境设置 CORS
   // || 'http://localhost:5777'
   const frontendUrl = process.env.FRONTEND_URL;
