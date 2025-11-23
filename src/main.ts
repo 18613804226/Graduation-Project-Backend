@@ -13,7 +13,8 @@ async function bootstrap() {
     dotenv.config({ path: envFile });
   }
   // / 根据环境设置 CORS
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5777';
+  // || 'http://localhost:5777'
+  const frontendUrl = process.env.FRONTEND_URL;
   const app = await NestFactory.create(AppModule);
   // ✅ 正确方式：使用 Nest 内置方法
   app.enableCors({
@@ -21,8 +22,9 @@ async function bootstrap() {
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3000);
-  console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
+
   console.log('=============后端服务启动成功==========');
 }
 bootstrap();
