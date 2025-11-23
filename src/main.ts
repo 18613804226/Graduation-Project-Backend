@@ -21,6 +21,8 @@ async function bootstrap() {
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3000);
+  console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+  console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
   console.log('=============后端服务启动成功==========');
 }
 bootstrap();
