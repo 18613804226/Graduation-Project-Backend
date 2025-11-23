@@ -1,7 +1,6 @@
 // prisma/schema.prisma（完整代码，直接全选替换）
 generator client {
   provider = "prisma-client-js"
-  config = { dataProxy: false }
 }
 
 datasource db {
