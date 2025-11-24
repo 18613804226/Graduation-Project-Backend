@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exception.filter';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
+import { PrismaClient } from '@prisma/client';
 async function bootstrap() {
   // 根据 NODE_ENV 决定是否加载 .env 文件
   const envFile =
@@ -28,7 +29,9 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
   app.useGlobalFilters(new AllExceptionsFilter());
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
-
+  new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
   console.log('✅=============后端服务启动成功==========✅');
 }
 bootstrap();

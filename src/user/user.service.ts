@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { verifyToken } from 'src/auth/jwt.utils';
 
@@ -16,7 +20,6 @@ export class UserService {
     }
     // 1. 验证并解析 token
     const payload = verifyToken(accessToken);
-
     if (!payload || !payload.id) {
       throw new UnauthorizedException('无效或过期的令牌');
     }
@@ -37,7 +40,7 @@ export class UserService {
       // email: user.email, // 可选：加上邮箱
     };
   }
-
+  // 根据ID查询用户
   async getUserInfo(userId: number) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const user = await this.prisma.user.findUnique({
@@ -81,5 +84,112 @@ export class UserService {
     };
 
     return rolePermissionMap[user.role] || []; // ✅ user.role 是字符串
+  }
+  // ✅ 新增：获取所有用户（带分页、搜索、筛选）
+  async getAllUsers(query: Record<string, string> = {}) {
+    const page = Math.max(1, parseInt(query.page || '1', 10));
+    const pageSize = Math.min(
+      100,
+      Math.max(1, parseInt(query.pageSize || '10', 10)),
+    );
+    const { keyword, role, status, username, createdAt, startDate, endDate } =
+      query;
+
+    const where: any = {};
+    // if (keyword) {
+    //   where.OR = [
+    //     { username: { contains: keyword, mode: 'insensitive' } },
+    //     { nickname: { contains: keyword, mode: 'insensitive' } },
+    //     { email: { contains: keyword, mode: 'insensitive' } },
+    //   ];
+    // }
+    // 支持 username 模糊搜索（如输入 "12" 匹配 "123"）
+    if (username && username.trim()) {
+      where.username = { contains: username.trim(), mode: 'insensitive' };
+    }
+    // 处理日期范围
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      where.createdAt = {
+        gte: start,
+        lte: end,
+      };
+    }
+    if (role) where.role = role;
+    if (status) where.status = status;
+    try {
+      const [list, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            username: true,
+            nickname: true,
+            // email: true,
+            role: true,
+            // status: true,
+            avatar: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.user.count({ where }),
+      ]);
+
+      return {
+        list: list.map((u) => ({
+          id: u.id,
+          username: u.username,
+          realName: u.nickname || u.username,
+          // email: u.email || '',
+          role: u.role,
+          // status: u.status,
+          avatar: u.avatar || 'https://via.placeholder.com/100',
+          createdAt: u.createdAt.toISOString(),
+        })),
+        total,
+        page,
+        pageSize,
+      };
+    } catch (error) {
+      throw new BadRequestException('获取用户列表失败');
+    }
+  }
+  // ✅ 新增：删除用户（禁止删除 ADMIN）
+  async deleteUser(userId: number, currentUserId: number): Promise<void> {
+    // 1. 不能删除自己
+    if (userId === currentUserId) {
+      throw new BadRequestException('不能删除当前登录用户');
+    }
+
+    // 2. 查询目标用户
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    // 3. 禁止删除 ADMIN 用户
+    if (user.role === 'ADMIN') {
+      throw new BadRequestException('不能删除管理员用户');
+    }
+
+    // 4. 执行删除（硬删除）
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    // 💡 如果你使用软删除（有 deletedAt 字段），请改用：
+    // await this.prisma.user.update({
+    //   where: { id: userId },
+    //   data: { deletedAt: new Date() },
+    // });
   }
 }
