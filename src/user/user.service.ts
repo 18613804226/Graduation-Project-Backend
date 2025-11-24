@@ -1,12 +1,42 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { verifyToken } from 'src/auth/jwt.utils';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
+
+  // ✅ 新增：通过 accessToken 获取当前用户信息
+  async getCurrentUserInfo(accessToken: string) {
+    if (!accessToken) {
+      throw new UnauthorizedException('未提供访问令牌');
+    }
+    // 1. 验证并解析 token
+    const payload = verifyToken(accessToken);
+
+    if (!payload || !payload.id) {
+      throw new UnauthorizedException('无效或过期的令牌');
+    }
+    // 2. 查询用户
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.id },
+    });
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
+    }
+    // 3. 返回标准化用户信息（vben-admin 格式）
+    return {
+      id: user.id,
+      username: user.username,
+      realName: user.nickname || user.username,
+      roles: [user.role],
+      avatar: user.avatar || 'https://via.placeholder.com/100',
+      // email: user.email, // 可选：加上邮箱
+    };
+  }
 
   async getUserInfo(userId: number) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

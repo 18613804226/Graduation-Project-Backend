@@ -1,22 +1,26 @@
 import { Controller, Get, Req } from '@nestjs/common';
 import express from 'express';
 import { UserService } from './user.service';
-import { success } from '../common/dto/response.dto'; // 👈 导入
+import { success, fail } from '../common/dto/response.dto'; // 👈 导入
 
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Get('info')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getInfo(@Req() req: express.Request) {
-    // 从请求头获取 token，解析后获取用户 ID（实际需 JWT 验证）
-    const userId = 1; // 模拟用户 ID
+  async getCurrentUser(@Req() req: Request) {
     try {
-    const userInfo = await this.userService.getUserInfo(userId);
-    return success(userInfo); // 使用统一响应格式
-  } catch (error) {
-    return fail('用户信息获取失败');
-  }
+      // 从请求头 Authorization: Bearer <token> 中提取 token
+      const authHeader = req.headers['authorization'];
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return fail('请先登录');
+      }
+      const token = authHeader.substring(7); // 去掉 'Bearer '
+
+      const userInfo = await this.userService.getCurrentUserInfo(token);
+      return success(userInfo);
+    } catch (error) {
+      return fail(error.message || '获取用户信息失败');
+    }
   }
 }

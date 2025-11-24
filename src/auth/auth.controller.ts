@@ -4,6 +4,7 @@ import type { Request } from 'express'; // 👈 用 import type
 import { AuthService } from './auth.service';
 import { success, fail } from '../common/dto/response.dto'; // 👈 导入
 import { UserService } from '../user/user.service'; // 👈 新增导入
+import { RegisterDto } from './dto/register.dto';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -41,6 +42,22 @@ export class AuthController {
       return success(permissions);
     } catch (error) {
       return fail('获取权限码失败');
+    }
+  }
+  // ✅ 新增：注册接口
+  @Post('register')
+  async register(@Body() dto: RegisterDto) {
+    try {
+      const user = await this.authService.register(dto);
+      return success({
+        id: user.id,
+        username: user.username,
+        // email: user.email,
+        roles: [user.role],
+        accessToken: user.accessToken,
+      });
+    } catch (error) {
+      return fail(error.message);
     }
   }
 }
