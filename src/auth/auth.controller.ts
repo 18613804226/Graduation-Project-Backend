@@ -19,7 +19,7 @@ export class AuthController {
       body.password,
     );
     if (!user) {
-      return fail('用户名或密码错误'); // ✅ 使用统一的失败响应格式
+      return fail('Username or password incorrect 用户名或密码错误'); // ✅ 使用统一的失败响应格式
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     // return { accessToken: user.accessToken };
@@ -27,7 +27,7 @@ export class AuthController {
     return success({
       id: user.id,
       username: user.username,
-      realName: user.nickname || user.username,
+      realName: user.name || user.username,
       roles: [user.role],
       accessToken: user.accessToken,
     });
@@ -41,7 +41,7 @@ export class AuthController {
       const permissions = await this.userService.getUserPermissions(userId);
       return success(permissions);
     } catch (error) {
-      return fail('获取权限码失败');
+      return fail('Failed to obtain permission code');
     }
   }
   // ✅ 新增：注册接口

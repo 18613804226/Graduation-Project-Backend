@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { verifyToken } from 'src/auth/jwt.utils';
-
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from '@prisma/client';
+import { compare, hash } from 'bcryptjs';
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
@@ -16,26 +18,27 @@ export class UserService {
   // ✅ 新增：通过 accessToken 获取当前用户信息
   async getCurrentUserInfo(accessToken: string) {
     if (!accessToken) {
-      throw new UnauthorizedException('未提供访问令牌');
+      throw new UnauthorizedException('No access token provided');
     }
     // 1. 验证并解析 token
     const payload = verifyToken(accessToken);
     if (!payload || !payload.id) {
-      throw new UnauthorizedException('无效或过期的令牌');
+      throw new UnauthorizedException('Invalid or expired tokens');
     }
     // 2. 查询用户
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
     });
     if (!user) {
-      throw new UnauthorizedException('用户不存在');
+      throw new UnauthorizedException('User does not exist.');
     }
     // 3. 返回标准化用户信息（vben-admin 格式）
     return {
       id: user.id,
       username: user.username,
-      realName: user.nickname || user.username,
-      roles: 'USER',
+      name: user.name,
+      realName: user.name || user.username,
+      role: user.role,
       avatar: user.avatar || 'https://via.placeholder.com/100',
       // email: user.email, // 可选：加上邮箱
     };
@@ -53,7 +56,7 @@ export class UserService {
     return {
       id: user.id,
       username: user.username,
-      realName: user.nickname || user.username,
+      name: user.name,
       roles: [user.role], // 映射 role 字段为 roles 数组
       avatar: user.avatar || 'https://via.placeholder.com/100',
     };
@@ -92,8 +95,7 @@ export class UserService {
       100,
       Math.max(1, parseInt(query.pageSize || '10', 10)),
     );
-    const { keyword, role, status, username, createdAt, startDate, endDate } =
-      query;
+    const { keyword, role, status, username, name, startDate, endDate } = query;
 
     const where: any = {};
     // if (keyword) {
@@ -129,6 +131,7 @@ export class UserService {
             id: true,
             username: true,
             nickname: true,
+            name: true,
             // email: true,
             role: true,
             // status: true,
@@ -144,7 +147,7 @@ export class UserService {
         list: list.map((u) => ({
           id: u.id,
           username: u.username,
-          realName: u.nickname || u.username,
+          name: u.name,
           // email: u.email || '',
           role: u.role,
           // status: u.status,
@@ -156,14 +159,16 @@ export class UserService {
         pageSize,
       };
     } catch (error) {
-      throw new BadRequestException('获取用户列表失败');
+      throw new BadRequestException('Failed to retrieve user list');
     }
   }
   // ✅ 新增：删除用户（禁止删除 ADMIN）
   async deleteUser(userId: number, currentUserId: number): Promise<void> {
     // 1. 不能删除自己
     if (userId === currentUserId) {
-      throw new BadRequestException('不能删除当前登录用户');
+      throw new BadRequestException(
+        'Cannot delete the currently logged-in user',
+      );
     }
 
     // 2. 查询目标用户
@@ -173,12 +178,12 @@ export class UserService {
     });
 
     if (!user) {
-      throw new BadRequestException('用户不存在');
+      throw new BadRequestException('User does not exist.');
     }
 
     // 3. 禁止删除 ADMIN 用户
     if (user.role === 'ADMIN') {
-      throw new BadRequestException('不能删除管理员用户');
+      throw new BadRequestException('Cannot delete administrator user');
     }
 
     // 4. 执行删除（硬删除）
@@ -191,5 +196,51 @@ export class UserService {
     //   where: { id: userId },
     //   data: { deletedAt: new Date() },
     // });
+  }
+  // ✅ 新增：更改用户信息
+  async updateUser(
+    userId: number,
+    dto: UpdateUserDto,
+    currentUser: User,
+  ): Promise<User> {
+    const { name, username, newPassword, oldPassword, role } = dto;
+
+    // 1. 获取当前用户信息
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User does not exist.');
+    }
+
+    // 2. 如果要改密码，验证旧密码
+    if (newPassword && oldPassword) {
+      const isMatch = await compare(oldPassword, user.password);
+      if (!isMatch) {
+        throw new Error('Old password incorrect');
+      }
+      // 加密新密码
+      const hashedPassword = await hash(newPassword, 10);
+      // 更新密码
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+      });
+    }
+
+    // 3. 更新其他字段（非密码）
+    const updateData: Partial<User> = {};
+    if (name) updateData.name = name;
+    if (username) updateData.username = username;
+    if (role && currentUser.role === 'ADMIN') {
+      updateData.role = role;
+    }
+
+    // 执行更新
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
   }
 }
