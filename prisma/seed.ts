@@ -18,6 +18,7 @@ async function main() {
       data: {
         username: 'admin',
         password: hashedPassword,
+        role: 'ADMIN',
       },
     });
     console.log('✅ 成功创建管理员用户: admin / 123456');

@@ -26,12 +26,14 @@ async function bootstrap() {
     origin: frontendUrl, // 前端地址
     credentials: true,
   });
+  // --
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health'],
+  });
+
   await app.listen(process.env.PORT ?? 3000);
   app.useGlobalFilters(new AllExceptionsFilter());
   console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL);
-  new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
   console.log('✅=============后端服务启动成功==========✅');
 }
 bootstrap();
