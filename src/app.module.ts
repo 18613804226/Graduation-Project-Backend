@@ -12,8 +12,9 @@ import { AiController } from './ai-exam/ai-exam.controller';
 import { AiService } from './ai-exam/ai-exam.service';
 import { VideoController } from './video/video.controller';
 import { VideoService } from './video/video.service';
+import { ConfigModule } from '@nestjs/config';
+import { TencentModule } from './tencentRtc/tencent.module';
 @Module({
-  imports: [AuthModule],
   controllers: [
     AppController,
     AuthController,
@@ -29,6 +30,14 @@ import { VideoService } from './video/video.service';
     PrismaService,
     AiService,
     VideoService,
+  ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
+    }),
+    AuthModule,
+    TencentModule,
   ],
 })
 export class AppModule {}
