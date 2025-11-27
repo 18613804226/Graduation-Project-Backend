@@ -14,8 +14,8 @@ export class ApiResponse<T> {
 }
 
 // 可选：提供快捷方法
-export const success = <T>(data: T, message = 'ok') => 
+export const success = <T>(data: T, message = 'ok') =>
   new ApiResponse(0, data, message);
 
-export const fail = (message = 'error', error = null) => 
+export const fail = (message = 'error', error = null) =>
   new ApiResponse(1, null, message, error);

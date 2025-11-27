@@ -1,4 +1,3 @@
-// prisma/schema.prisma（完整代码，直接全选替换）
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,11 +12,11 @@ model User {
   username  String   @unique
   password  String
   nickname  String?
-  name      String?
   role      String   @default("STUDENT")
   avatar    String?
   createdAt DateTime @default(now())
-  courses   Course[] // 反向关系（关键！）
+  name      String?
+  courses   Course[]
 }
 
 model Course {
@@ -26,6 +25,36 @@ model Course {
   description String?
   cover       String?
   teacherId   Int
-  teacher     User     @relation(fields: [teacherId], references: [id])
   createdAt   DateTime @default(now())
+  teacher     User     @relation(fields: [teacherId], references: [id])
+}
+
+model PublishedExam {
+  id           Int            @id @default(autoincrement())
+  title        String
+  subject      String
+  difficulty   String
+  questionType String
+  createdAt    DateTime       @default(now())
+  createdBy    String
+  status       String         @default("active")
+  questions    ExamQuestion[]
+}
+
+model ExamQuestion {
+  id              Int            @id @default(autoincrement())
+  question        String
+  answer          String
+  explanation     String?
+  createdAt       DateTime       @default(now())
+  subject         String
+  difficulty      String
+  questionType    String
+  options         Json
+  optionsHash     String?   // 可选，但推荐
+  publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
+  publishedExamId Int?
+  isCurrentExam   Boolean  @default(false) // 👈 新增字段！
+  @@index([subject, difficulty, questionType])
+  @@index([isCurrentExam]) // 👈 加索引，查询更快
 }

@@ -10,6 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthModule } from './auth/auth.module'; // 👈 引入 AuthModule
 import { AiController } from './ai-exam/ai-exam.controller';
 import { AiService } from './ai-exam/ai-exam.service';
+import { VideoController } from './video/video.controller';
+import { VideoService } from './video/video.service';
 @Module({
   imports: [AuthModule],
   controllers: [
@@ -18,7 +20,15 @@ import { AiService } from './ai-exam/ai-exam.service';
     UserController,
     HealthController,
     AiController,
+    VideoController,
   ],
-  providers: [AppService, AuthService, UserService, PrismaService, AiService],
+  providers: [
+    AppService,
+    AuthService,
+    UserService,
+    PrismaService,
+    AiService,
+    VideoService,
+  ],
 })
 export class AppModule {}

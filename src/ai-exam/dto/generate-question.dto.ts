@@ -16,6 +16,6 @@ export class GenerateQuestionDto {
 
   @IsInt()
   @Min(1)
-  @Max(20)
+  @Max(30)
   count: number;
 }

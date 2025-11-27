@@ -5,6 +5,9 @@ import {
   Body,
   UsePipes,
   ValidationPipe,
+  Get,
+  ParseIntPipe,
+  Param,
 } from '@nestjs/common';
 import { AiService } from './ai-exam.service';
 import { GenerateQuestionDto } from './dto/generate-question.dto';
@@ -12,6 +15,8 @@ import { success, fail } from 'src/common/dto/response.dto';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
+import { SaveToBankDto } from './dto/save-to-bank.dto';
+import { PublishExamDto } from './dto/publish-exam.dto';
 
 // 设置环境
 const envFile =
@@ -99,5 +104,45 @@ export class AiController {
       console.error('AI 审题失败:', error);
       return fail('AI 审题服务暂时不可用');
     }
+  }
+  @Post('save-to-bank')
+  async saveToBank(@Body() dto: SaveToBankDto) {
+    const result = await this.aiService.saveToQuestionBank(dto);
+    return success({
+      success: true,
+      message: 'Successfully saved to the question bank',
+    });
+  }
+
+  @Post('start-exam')
+  async startExam(
+    @Body()
+    body: {
+      subject: string;
+      difficulty: string;
+      questionType: string;
+      count: number;
+    },
+  ) {
+    const questions = await this.aiService.getRandomExam(
+      body.subject,
+      body.difficulty,
+      body.questionType,
+      body.count,
+    );
+
+    return success(questions);
+  }
+  // ✅ 发布固定试卷（管理员/AI调用）
+  @Post('publish')
+  async publishExam(@Body() dto: PublishExamDto) {
+    this.aiService.setCurrentExam(dto);
+    return success({ success: true, message: 'Published successfully' });
+  }
+
+  @Get('current')
+  async getCurrentExam() {
+    const data = await this.aiService.getCurrentExam();
+    return success(data);
   }
 }
