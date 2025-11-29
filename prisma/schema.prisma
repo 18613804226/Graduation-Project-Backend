@@ -58,3 +58,19 @@ model ExamQuestion {
   @@index([subject, difficulty, questionType])
   @@index([isCurrentExam]) // 👈 加索引，查询更快
 }
+
+model ExamTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String        @unique 
+  duration    Int
+  sections    ExamSection[]
+}
+
+model ExamSection {
+  id           Int      @id @default(autoincrement())
+  questionType String
+  count        Int
+  score        Int
+  template     ExamTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   Int
+}

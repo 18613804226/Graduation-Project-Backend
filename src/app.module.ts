@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from '../prisma/prisma.module'; // 👈 只导入一次
 import { AuthController } from './auth/auth.controller';
 import { HealthController } from './health/health.controller';
 import { AuthService } from './auth/auth.service';
@@ -14,6 +15,7 @@ import { VideoController } from './video/video.controller';
 import { VideoService } from './video/video.service';
 import { ConfigModule } from '@nestjs/config';
 import { TencentModule } from './tencentRtc/tencent.module';
+import { ExamTemplateModule } from './exam-template/exam-template.module';
 @Module({
   controllers: [
     AppController,
@@ -36,8 +38,10 @@ import { TencentModule } from './tencentRtc/tencent.module';
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
     }),
+    PrismaModule,
     AuthModule,
     TencentModule,
+    ExamTemplateModule,
   ],
 })
 export class AppModule {}
