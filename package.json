@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "pretbuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./browser-cache && echo '✅ Download finished'",
+    "prebuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./browser-cache && echo '✅ Download finished'",
     "build": "prisma generate --schema=./prisma/schema.prisma --no-engine && nest build",
     "postbuild": "cp -r browser-cache/chrome dist/chrome && echo '✅ Chrome copied to dist/chrome' && ls -la dist/chrome",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
