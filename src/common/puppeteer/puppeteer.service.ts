@@ -1,25 +1,47 @@
 // src/common/puppeteer/puppeteer.service.ts
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   private browser: puppeteer.Browser;
 
   async onModuleInit() {
-    // 启动一次浏览器（整个应用生命周期只启动一次）
+    // 尝试自动查找 Puppeteer 下载的 Chrome 路径
+    let executablePath = puppeteer.executablePath();
+
+    // 如果默认路径不存在（Render 环境常见），手动构造路径
+    if (!fs.existsSync(executablePath)) {
+      const platform = 'linux'; // Render 是 Linux
+      const version = '142.0.7444.175'; // 你的错误日志中的版本
+      executablePath = path.resolve(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        'node_modules',
+        '.puppeteer',
+        'chrome',
+        `${platform}-${version}`,
+        'chrome',
+      );
+    }
+
     this.browser = await puppeteer.launch({
+      executablePath,
       headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage', // 防止内存不足
+        '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--single-process', // Render 内存限制
+        '--disable-software-rasterizer',
       ],
-      // 可选：限制内存
-      // executablePath: '/usr/bin/chromium-browser', // Docker 中指定路径
     });
-    console.log('✅ Puppeteer browser launched');
+    console.log('✅ Puppeteer browser launched with path:', executablePath);
   }
 
   async onModuleDestroy() {
