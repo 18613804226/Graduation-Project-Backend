@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import * as puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core'; // 👈 用 puppeteer-core
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -27,22 +27,18 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
     console.log('📦 Found version dirs:', versionDirs);
 
     if (versionDirs.length === 0) {
-      throw new Error(`No Chrome version found in ${chromeRoot}`);
+      throw new Error(`❌ No Chrome version found in ${chromeRoot}`);
     }
 
-    const latestVersion = versionDirs.sort().reverse()[0];
+    const latestVersionDir = versionDirs.sort().reverse()[0];
     const executablePath = path.join(
       chromeRoot,
-      latestVersion,
+      latestVersionDir,
       'chrome-linux64/chrome',
     );
 
-    console.log('🎯 Final executablePath:', executablePath);
-    console.log('✅ File exists?', fs.existsSync(executablePath));
-
-    if (!fs.existsSync(executablePath)) {
-      throw new Error(`Chrome binary not found at ${executablePath}`);
-    }
+    console.log('🔍 Using Chrome version:', latestVersionDir);
+    console.log('✅ Executable exists?', fs.existsSync(executablePath));
 
     this.browser = await puppeteer.launch({
       executablePath,
@@ -51,8 +47,8 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--single-process',
         '--disable-gpu',
+        '--single-process',
       ],
     });
 
@@ -60,6 +56,13 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.browser?.close();
+    if (this.browser) {
+      await this.browser.close();
+      console.log('🛑 Puppeteer closed');
+    }
+  }
+
+  getBrowser() {
+    return this.browser;
   }
 }
