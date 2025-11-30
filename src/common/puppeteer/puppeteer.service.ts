@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import * as puppeteer from 'puppeteer-core'; // 👈 用 puppeteer-core
+import * as puppeteer from 'puppeteer-core';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -8,25 +8,41 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   private browser: any;
 
   async onModuleInit() {
-    // 动态查找最新版本目录
-    const chromeDir = path.join(__dirname, '../../../chrome');
-    const versionDirs = fs
-      .readdirSync(chromeDir)
-      .filter((dir) => dir.startsWith('linux-'));
+    const chromeRoot = path.join(__dirname, '../../../chrome');
 
-    if (versionDirs.length === 0) {
-      throw new Error(`❌ No Chrome version found in ${chromeDir}`);
+    console.log('🔍 Looking for Chrome in:', chromeRoot);
+    console.log(
+      '📁 Available files in dist/:',
+      fs.readdirSync(path.join(__dirname, '../../..')),
+    );
+
+    if (!fs.existsSync(chromeRoot)) {
+      console.error('❌ chromeRoot does NOT exist!');
+      throw new Error(`Chrome root directory not found: ${chromeRoot}`);
     }
 
-    const latestVersionDir = versionDirs.sort().reverse()[0];
+    const versionDirs = fs
+      .readdirSync(chromeRoot)
+      .filter((d) => d.startsWith('linux-'));
+    console.log('📦 Found version dirs:', versionDirs);
+
+    if (versionDirs.length === 0) {
+      throw new Error(`No Chrome version found in ${chromeRoot}`);
+    }
+
+    const latestVersion = versionDirs.sort().reverse()[0];
     const executablePath = path.join(
-      chromeDir,
-      latestVersionDir,
+      chromeRoot,
+      latestVersion,
       'chrome-linux64/chrome',
     );
 
-    console.log('🔍 Using Chrome version:', latestVersionDir);
-    console.log('✅ Executable exists?', fs.existsSync(executablePath));
+    console.log('🎯 Final executablePath:', executablePath);
+    console.log('✅ File exists?', fs.existsSync(executablePath));
+
+    if (!fs.existsSync(executablePath)) {
+      throw new Error(`Chrome binary not found at ${executablePath}`);
+    }
 
     this.browser = await puppeteer.launch({
       executablePath,
@@ -35,8 +51,8 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu',
         '--single-process',
+        '--disable-gpu',
       ],
     });
 
@@ -44,13 +60,6 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    if (this.browser) {
-      await this.browser.close();
-      console.log('🛑 Puppeteer closed');
-    }
-  }
-
-  getBrowser() {
-    return this.browser;
+    await this.browser?.close();
   }
 }
