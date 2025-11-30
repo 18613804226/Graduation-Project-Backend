@@ -1,4 +1,3 @@
-import { name } from './../../node_modules/ci-info/index.d';
 // src/certificate/certificate.controller.ts
 import {
   Controller,
