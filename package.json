@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "prisma generate --schema=./prisma/schema.prisma --no-engine && nest build",
-    "postbuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./dist && echo '✅ Download finished'&& ls -la dist/chrome",
+    "postbuild": "npx playwright install-deps && npx playwright install chromium",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "set NODE_ENV=production&& nest start",
     "start:dev": "set NODE_ENV=development&& nest start --watch",
@@ -43,7 +43,7 @@
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
     "passport-jwt": "^4.0.1",
-    "puppeteer-core": "^24.31.0",
+    "playwright-core": "^1.57.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "tls-sig-api-v2": "^1.0.2"

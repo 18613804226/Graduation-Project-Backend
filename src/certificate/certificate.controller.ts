@@ -30,18 +30,15 @@ import { join } from 'path';
 // import * as puppeteer from 'puppeteer-core';
 import { readFileToBase64 } from '../utils/file.util';
 import { readFile } from 'fs/promises';
-import { PuppeteerService } from '../common/puppeteer/puppeteer.service';
-
+import { PdfService } from 'src/common/pdf/pdf.service';
 @ApiTags('证书')
 @UseGuards(AuthGuard('jwt'))
 @Controller('certificates')
 export class CertificateController {
   constructor(
     private readonly certificateService: CertificateService,
-    private readonly puppeteerService: PuppeteerService,
+    private readonly pdfService: PdfService,
   ) {}
-
-  // certificate.controller.ts
   @Post()
   async create(@Body('params') params: any, @Req() req) {
     const { username, courseId, templateId } = params;
@@ -92,19 +89,20 @@ export class CertificateController {
     await this.certificateService.remove(id);
     return success({ success: true, message: 'Delete Success' });
   }
+
   @Get(':id/pdf')
   async downloadPdf(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
     try {
-      // 获取证书数据
       const cert = await this.certificateService.findOne(id);
 
-      // 读取 HTML 模板（注意路径：现在模板放在 src/assets/templates/）
-      let html = (
-        await readFile(join(__dirname, '../assets/templates/certificate.html'))
-      ).toString();
+      // 读取 HTML 模板
+      let html: any = await readFile(
+        join(__dirname, '../assets/templates/certificate.html'),
+      );
+      html = html.toString(); // 确保是字符串
 
       // 读取印章 Base64
       const sealBase64 = await readFileToBase64(
@@ -117,21 +115,10 @@ export class CertificateController {
         .replace('{{COURSE_NAME}}', cert.course.name)
         .replace('{{ISSUED_DATE}}', cert.issuedAt.toLocaleDateString('zh-CN'))
         .replace('{{SEAL_BASE64}}', sealBase64)
-        .replace('{{FONT_BASE64}}', ''); // 不内嵌字体
+        .replace('{{FONT_BASE64}}', '');
 
-      // ✅ 复用已启动的浏览器（关键优化！）
-      const browser = this.puppeteerService.getBrowser();
-      const page = await browser.newPage();
-
-      // 设置内容并生成 PDF
-      await page.setContent(html, { waitUntil: 'domcontentloaded' });
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-      });
-
-      // ✅ 只关闭页面，不关闭浏览器！
-      await page.close();
+      // ✅ 关键修复：只调用 pdfService.htmlToPdf，不要操作浏览器！
+      const pdfBuffer = await this.pdfService.htmlToPdf(html); // 这里是 pdfService（小写）
 
       // 返回 PDF
       res.setHeader('Content-Type', 'application/pdf');
