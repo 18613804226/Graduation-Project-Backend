@@ -27,7 +27,7 @@ import { success } from 'src/common/dto/response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { join } from 'path';
 // const fontPath = join(__dirname, '../assets/fonts/NotoSansSC-Regular.ttf');
-import * as puppeteer from 'puppeteer';
+// import * as puppeteer from 'puppeteer-core';
 import { readFileToBase64 } from '../utils/file.util';
 import { readFile } from 'fs/promises';
 import { PuppeteerService } from '../common/puppeteer/puppeteer.service';
