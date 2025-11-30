@@ -21,6 +21,7 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
         '..',
         '..',
         '..',
+        '..',
         'node_modules',
         '.puppeteer',
         'chrome',
