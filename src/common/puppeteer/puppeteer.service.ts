@@ -11,7 +11,13 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     // 尝试自动查找 Puppeteer 下载的 Chrome 路径
     let executablePath = puppeteer.executablePath();
-
+    console.log('🔍 __dirname:', __dirname);
+    console.log(
+      '🔍 Project root (3x ..):',
+      path.resolve(__dirname, '..', '..', '..'),
+    );
+    console.log('🔍 Chrome path:', executablePath);
+    console.log('✅ File exists?', fs.existsSync(executablePath));
     // 如果默认路径不存在（Render 环境常见），手动构造路径
     if (!fs.existsSync(executablePath)) {
       // const platform = 'linux'; // Render 是 Linux
