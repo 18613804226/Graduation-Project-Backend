@@ -14,7 +14,7 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
     console.log('🔍 __dirname:', __dirname);
     console.log(
       '🔍 Project root (3x ..):',
-      path.resolve(__dirname, '..', '..', '..', '..'),
+      path.resolve(__dirname, '..', '..', '..'),
     );
     console.log('🔍 Chrome path:', executablePath);
     console.log('✅ File exists?', fs.existsSync(executablePath));
@@ -24,7 +24,6 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
       // const version = '142.0.7444.175'; // 你的错误日志中的版本
       executablePath = path.resolve(
         __dirname,
-        '..',
         '..',
         '..',
         '..',
