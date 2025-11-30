@@ -27,6 +27,7 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
         '..',
         '..',
         '..',
+        '..',
         '.local-chromium',
         'chrome',
         'linux-142.0.7444.175',
