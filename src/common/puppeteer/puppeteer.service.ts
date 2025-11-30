@@ -14,17 +14,16 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
 
     // 如果默认路径不存在（Render 环境常见），手动构造路径
     if (!fs.existsSync(executablePath)) {
-      const platform = 'linux'; // Render 是 Linux
-      const version = '142.0.7444.175'; // 你的错误日志中的版本
+      // const platform = 'linux'; // Render 是 Linux
+      // const version = '142.0.7444.175'; // 你的错误日志中的版本
       executablePath = path.resolve(
         __dirname,
         '..',
         '..',
-        '..',
-        'node_modules',
-        '.puppeteer',
+        '..', // → /opt/render/project/src
+        '.local-chromium',
         'chrome',
-        `${platform}-${version}`,
+        'linux-142.0.7444.175',
         'chrome',
       );
     }
