@@ -8,7 +8,7 @@
   "scripts": {
     "pretbuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./dist && echo '✅ Download finished'",
     "build": "prisma generate --schema=./prisma/schema.prisma --no-engine && nest build",
-    "postbuild": "cp -r .browser-cache/chrome dist/chrome && echo '✅ Chrome copied to dist/chrome' && ls -la dist/chrome",
+    "postbuild": "cp -r dist/chrome dist/chrome && echo '✅ Chrome copied to dist/chrome' && ls -la dist/chrome",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "set NODE_ENV=production&& nest start",
     "start:dev": "set NODE_ENV=development&& nest start --watch",
