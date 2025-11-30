@@ -35,10 +35,10 @@ export class PdfService {
       format: options?.format || 'A4',
       printBackground: options?.printBackground ?? true,
       margin: {
-        top: '1cm',
-        bottom: '1cm',
-        left: '1cm',
-        right: '1cm',
+        top: '0cm',
+        bottom: '0cm',
+        left: '0cm',
+        right: '0cm',
       },
     });
 
