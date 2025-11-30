@@ -12,12 +12,19 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
     const currentDir = __dirname;
     console.log('🔍 Current directory:', currentDir);
 
-    // 回退到 project root
-    const projectRoot = path.join(currentDir, '../../..'); // src/src → project root
-    console.log('📁 Project root:', projectRoot);
-
-    // 查找 dist/chrome
-    const chromeRoot = path.join(projectRoot, 'dist', 'chrome');
+    // 回退到 dist/ 目录
+    const distDir = path.join(currentDir, '../../..'); // src/dist/src/common → dist/
+    console.log('📁 dist dir:', distDir);
+    // 🔥 新增：打印 dist/ 目录下的所有文件和文件夹
+    try {
+      const distContents = fs.readdirSync(distDir);
+      console.log('📦 Contents of dist/:', distContents);
+    } catch (err) {
+      console.error('💥 Failed to read dist/ directory:', err.message);
+      throw new Error('Cannot access dist/ folder');
+    }
+    // 查找 chrome
+    const chromeRoot = path.join(distDir, 'chrome');
     console.log('🔍 Looking for Chrome in:', chromeRoot);
 
     if (!fs.existsSync(chromeRoot)) {
