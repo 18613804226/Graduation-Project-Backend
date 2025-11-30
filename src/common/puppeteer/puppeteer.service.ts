@@ -14,7 +14,7 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
     console.log('🔍 __dirname:', __dirname);
     console.log(
       '🔍 Project root (3x ..):',
-      path.resolve(__dirname, '..', '..', '..'),
+      path.resolve(__dirname, '..', '..', '..', '..'),
     );
     console.log('🔍 Chrome path:', executablePath);
     console.log('✅ File exists?', fs.existsSync(executablePath));
