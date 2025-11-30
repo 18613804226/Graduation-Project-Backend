@@ -26,6 +26,7 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
     // 查找 chrome
     const chromeRoot = path.join(distDir, 'chrome');
     console.log('🔍 Looking for Chrome in:', chromeRoot);
+    console.log('📁 Exists?', fs.existsSync(chromeRoot));
 
     if (!fs.existsSync(chromeRoot)) {
       console.error('❌ chromeRoot does NOT exist!');
