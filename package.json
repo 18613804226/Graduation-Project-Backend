@@ -23,6 +23,10 @@
     "studio": "prisma studio",
     "seed": "prisma db seed"
   },
+  "files": [
+    "dist",
+    ".local-chromium"
+  ],
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
