@@ -8,18 +8,25 @@ export class PuppeteerService implements OnModuleInit, OnModuleDestroy {
   private browser: any;
 
   async onModuleInit() {
-    // 正确路径：从 dist/src/common/puppeteer 回退到 dist/
+    // 动态查找最新版本目录
+    const chromeDir = path.join(__dirname, '../../../chrome');
+    const versionDirs = fs
+      .readdirSync(chromeDir)
+      .filter((dir) => dir.startsWith('linux-'));
+
+    if (versionDirs.length === 0) {
+      throw new Error(`❌ No Chrome version found in ${chromeDir}`);
+    }
+
+    const latestVersionDir = versionDirs.sort().reverse()[0];
     const executablePath = path.join(
-      __dirname,
-      '../../../.cache/puppeteer/chrome/linux-142.0.7444.175/chrome-linux64/chrome',
+      chromeDir,
+      latestVersionDir,
+      'chrome-linux64/chrome',
     );
 
-    console.log('🔍 Final executablePath:', executablePath);
-    console.log('✅ File exists?', fs.existsSync(executablePath));
-
-    if (!fs.existsSync(executablePath)) {
-      throw new Error(`❌ Chrome binary not found at ${executablePath}`);
-    }
+    console.log('🔍 Using Chrome version:', latestVersionDir);
+    console.log('✅ Executable exists?', fs.existsSync(executablePath));
 
     this.browser = await puppeteer.launch({
       executablePath,

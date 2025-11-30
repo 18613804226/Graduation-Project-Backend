@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "prisma generate --schema=./prisma/schema.prisma --no-engine && nest build",
-    "postbuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./dist && echo '✅ Download finished' && ls -la ./dist/.cache/puppeteer/chrome/",
+    "postbuild": "echo '📥 Starting browser download...' && pnpm dlx puppeteer browsers install chrome --path ./dist && echo '✅ Download finished'",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "set NODE_ENV=production&& nest start",
     "start:dev": "set NODE_ENV=development&& nest start --watch",
