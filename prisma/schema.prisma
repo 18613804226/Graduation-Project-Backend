@@ -8,25 +8,28 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  nickname  String?
-  role      String   @default("STUDENT")
-  avatar    String?
-  createdAt DateTime @default(now())
-  name      String?
-  courses   Course[]
+  id           Int           @id @default(autoincrement())
+  username     String        @unique
+  email        String?       @unique
+  password     String
+  nickname     String?
+  role         String        @default("STUDENT")
+  avatar       String?
+  createdAt    DateTime      @default(now())
+  name         String?
+  courses      Course[]
+  certificates Certificate[]
 }
 
 model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  cover       String?
-  teacherId   Int
-  createdAt   DateTime @default(now())
-  teacher     User     @relation(fields: [teacherId], references: [id])
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  description  String?
+  cover        String?
+  teacherId    Int
+  createdAt    DateTime      @default(now())
+  teacher      User          @relation(fields: [teacherId], references: [id])
+  certificates Certificate[]
 }
 
 model PublishedExam {
@@ -51,26 +54,44 @@ model ExamQuestion {
   difficulty      String
   questionType    String
   options         Json
-  optionsHash     String?   // 可选，但推荐
+  optionsHash     String? // 可选，但推荐
   publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
   publishedExamId Int?
-  isCurrentExam   Boolean  @default(false) // 👈 新增字段！
+  isCurrentExam   Boolean        @default(false) // 👈 新增字段！
+
   @@index([subject, difficulty, questionType])
   @@index([isCurrentExam]) // 👈 加索引，查询更快
 }
 
 model ExamTemplate {
-  id          Int      @id @default(autoincrement())
-  name        String        @unique 
-  duration    Int
-  sections    ExamSection[]
+  id       Int           @id @default(autoincrement())
+  name     String        @unique
+  duration Int
+  sections ExamSection[]
 }
 
 model ExamSection {
-  id           Int      @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   questionType String
   count        Int
   score        Int
-  template     ExamTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template     ExamTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId   Int
+}
+
+model Certificate {
+  id         Int      @id @default(autoincrement())
+  name       String? // 证书名称
+  username   String // 学员姓名
+  courseId   Int
+  courseName String? // 课程名
+  issuedAt   DateTime @default(now())
+  status     String?  @default("ACTIVE") // ACTIVE, EXPIRED
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  templateId Int
+  // 关联关系
+  user       User     @relation(fields: [userId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id])
 }

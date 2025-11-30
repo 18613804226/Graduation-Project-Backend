@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Certificate" ALTER COLUMN "name" DROP NOT NULL,
+ALTER COLUMN "courseName" DROP NOT NULL,
+ALTER COLUMN "status" DROP NOT NULL;

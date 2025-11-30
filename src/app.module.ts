@@ -16,6 +16,9 @@ import { VideoService } from './video/video.service';
 import { ConfigModule } from '@nestjs/config';
 import { TencentModule } from './tencentRtc/tencent.module';
 import { ExamTemplateModule } from './exam-template/exam-template.module';
+import { CertificateModule } from './certificate/certificate.module';
+import { CourseModule } from './course/course.module';
+import { PuppeteerModule } from './common/puppeteer/puppeteer.module'; // 👈 导入模块
 @Module({
   controllers: [
     AppController,
@@ -42,6 +45,9 @@ import { ExamTemplateModule } from './exam-template/exam-template.module';
     AuthModule,
     TencentModule,
     ExamTemplateModule,
+    CertificateModule,
+    CourseModule,
+    PuppeteerModule,
   ],
 })
 export class AppModule {}
