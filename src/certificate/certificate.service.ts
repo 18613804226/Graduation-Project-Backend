@@ -89,7 +89,7 @@ export class CertificateService {
       name: cert.user ? cert.user.name : null, // 假设用户表中有name字段
       userEmail: cert.user ? cert.user.email : null, // 假设用户表中有email字段
       role: cert.user ? cert.user.role : null,
-      courseName: cert.course ? cert.course.name : null, // ✅ 新增：课程名称
+      courseName: cert.course ? cert.course.title : null, // ✅ 新增：课程名称
       // 可以添加更多用户信息...
     }));
 
@@ -133,6 +133,7 @@ export class CertificateService {
     await this.prisma.certificate.delete({
       where: { id },
     });
+
     return { message: `证书 #${id} 已删除` };
   }
 }

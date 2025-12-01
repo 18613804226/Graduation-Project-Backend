@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { success, fail } from '../common/dto/response.dto'; // 👈 导入
 import { UserService } from '../user/user.service'; // 👈 新增导入
 import { RegisterDto } from './dto/register.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -13,6 +14,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Public()
   async login(@Body() body: { username: string; password: string }) {
     const user = await this.authService.validateUser(
       body.username,
@@ -46,6 +48,7 @@ export class AuthController {
   }
   // ✅ 新增：注册接口
   @Post('register')
+  @Public()
   async register(@Body() dto: RegisterDto) {
     try {
       const user = await this.authService.register(dto);

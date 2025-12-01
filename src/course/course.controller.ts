@@ -9,7 +9,7 @@ import {
   Delete,
   Put,
   Query,
-  UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -22,12 +22,15 @@ export class CourseController {
 
   @Post()
   create(@Body() createDto: CreateCourseDto) {
-    return this.courseService.create(createDto);
+    const res = this.courseService.create(createDto);
+    return success(res);
   }
 
   @Get()
-  async findAll(@Query() query: GetCourseDto) {
-    const res = await this.courseService.findAll(query);
+  async findAll(
+    @Query(new ValidationPipe({ transform: true })) query: GetCourseDto,
+  ) {
+    const res = await this.courseService.findAll(query); // ✅ query.page 是 number！
     return success(res);
   }
 
@@ -43,6 +46,7 @@ export class CourseController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.courseService.remove(+id);
+    const res = this.courseService.remove(+id);
+    return success({ success: true, message: 'Delete Success' });
   }
 }

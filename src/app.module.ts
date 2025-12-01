@@ -19,6 +19,8 @@ import { ExamTemplateModule } from './exam-template/exam-template.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { CourseModule } from './course/course.module';
 import { CommonModule } from './common/common.module'; // 👈 导入模块
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 @Module({
   controllers: [
     AppController,
@@ -35,6 +37,10 @@ import { CommonModule } from './common/common.module'; // 👈 导入模块
     PrismaService,
     AiService,
     VideoService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
   imports: [
     ConfigModule.forRoot({

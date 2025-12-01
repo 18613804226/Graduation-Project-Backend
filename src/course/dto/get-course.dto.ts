@@ -1,20 +1,40 @@
-// src/course/dto/get-course.dto.ts
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+// dto/get-course.dto.ts
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Min, Max, IsString } from 'class-validator';
 
 export class GetCourseDto {
   @IsOptional()
   @IsString()
-  name?: string;
+  title?: string;
+  search?: string;
+  teacher?: string;
 
   @IsOptional()
   @IsString()
-  search?: string; // 模糊搜索课程名或描述
+  instructor?: string;
 
   @IsOptional()
-  @IsNumber()
-  page?: number = 1;
+  @IsString()
+  category?: string;
 
   @IsOptional()
-  @IsNumber()
-  pageSize?: number = 10;
+  @IsString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
+  @IsOptional()
+  @Type(() => Number) // 👈 关键：自动转 number
+  @IsInt()
+  @Min(1)
+  page: number = 1;
+
+  @IsOptional()
+  @Type(() => Number) // 👈 关键
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize: number = 20;
 }

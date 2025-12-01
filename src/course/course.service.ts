@@ -17,41 +17,84 @@ export class CourseService {
   }
 
   async findAll(query: GetCourseDto) {
-    const { page, pageSize, name, search } = query;
+    const {
+      page,
+      pageSize,
+      title,
+      search,
+      teacher,
+      category,
+      startDate,
+      endDate,
+    } = query;
 
     const where: any = {};
-    if (name) where.name = name;
-    if (search) {
+    const searchTerm = title || search; // 兼容 title 和 search
+
+    // 🔹 搜索课程标题或描述
+    if (searchTerm) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
       ];
     }
 
-    // 🔑 关键逻辑：如果没传 page 或 pageSize，就查全部
-    if (page == null || pageSize == null) {
-      // 查询全部，不分页
-      const data = await this.prisma.course.findMany({
-        where,
-        include: { teacher: { select: { id: true, username: true } } },
-      });
-      return data; // 直接返回数组
+    // 🔹 搜索教师姓名（通过 teacher 字段）
+    if (teacher) {
+      where.teacher = {
+        username: { contains: teacher, mode: 'insensitive' },
+      };
+    }
+    // 🔹 搜索分类
+    if (category) {
+      where.category = { equals: category }; // 精确匹配
+      // 如果允许模糊搜索，用：{ contains: category, mode: 'insensitive' }
     }
 
-    // 否则走分页逻辑
+    // 🔹 时间范围筛选
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = startDate;
+      }
+      if (endDate) {
+        where.createdAt.lte = endDate;
+      }
+    }
+    if (page == null || pageSize == null) {
+      const data = await this.prisma.course.findMany({
+        where,
+        include: {
+          teacher: { select: { username: true } }, // 只返回 username
+        },
+      });
+      // ✅ 转换 teacher 对象为字符串
+      return data.map((course) => ({
+        ...course,
+        teacher: course.teacher?.username || null,
+      }));
+    }
+
     const skip = (page - 1) * pageSize;
+
     const [data, total] = await Promise.all([
       this.prisma.course.findMany({
         where,
         skip,
         take: pageSize,
-        include: { teacher: { select: { id: true, username: true } } },
+        include: {
+          teacher: { select: { username: true } },
+        },
       }),
       this.prisma.course.count({ where }),
     ]);
-
+    // ✅ 转换分页数据中的 teacher
+    const list = data.map((course) => ({
+      ...course,
+      teacher: course.teacher?.username || null,
+    }));
     return {
-      data,
+      list: list,
       total,
       page,
       pageSize,

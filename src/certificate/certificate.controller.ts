@@ -112,7 +112,7 @@ export class CertificateController {
       // 替换模板变量
       html = html
         .replace('{{USERNAME}}', cert.username)
-        .replace('{{COURSE_NAME}}', cert.course.name)
+        .replace('{{COURSE_NAME}}', cert.course?.title)
         .replace('{{ISSUED_DATE}}', cert.issuedAt.toLocaleDateString('zh-CN'))
         .replace('{{SEAL_BASE64}}', sealBase64)
         .replace('{{FONT_BASE64}}', '');

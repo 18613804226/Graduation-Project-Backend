@@ -23,12 +23,14 @@ model User {
 
 model Course {
   id           Int           @id @default(autoincrement())
-  name         String        @unique
+  title        String        @unique // 👈 改为 title
   description  String?
   cover        String?
   teacherId    Int
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt // 建议加上
   teacher      User          @relation(fields: [teacherId], references: [id])
+  category     String?
   certificates Certificate[]
 }
 
@@ -83,7 +85,7 @@ model Certificate {
   id         Int      @id @default(autoincrement())
   name       String? // 证书名称
   username   String // 学员姓名
-  courseId   Int
+  courseId   Int?
   courseName String? // 课程名
   issuedAt   DateTime @default(now())
   status     String?  @default("ACTIVE") // ACTIVE, EXPIRED
@@ -93,5 +95,5 @@ model Certificate {
   templateId Int
   // 关联关系
   user       User     @relation(fields: [userId], references: [id])
-  course     Course   @relation(fields: [courseId], references: [id])
+  course     Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }

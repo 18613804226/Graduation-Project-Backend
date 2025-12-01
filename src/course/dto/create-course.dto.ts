@@ -3,6 +3,7 @@ import { IsString, IsInt, IsOptional } from 'class-validator';
 
 export class CreateCourseDto {
   @IsString()
+  title: string;
   name: string;
   @IsOptional()
   @IsString()

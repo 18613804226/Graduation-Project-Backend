@@ -25,7 +25,7 @@ export const generateToken = (payload: object): string => {
 };
 
 export const verifyToken = (token: string): any => {
-  console.log('Token:', token); // 看有没有值
+  // console.log('Token:', token); // 看有没有值
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {

@@ -4,6 +4,7 @@ import { AllExceptionsFilter } from './exception.filter';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import { PrismaClient } from '@prisma/client';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 async function bootstrap() {
   // 根据 NODE_ENV 决定是否加载 .env 文件
   const envFile =
