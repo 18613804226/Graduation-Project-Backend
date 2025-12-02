@@ -39,11 +39,22 @@ export class CertificateService {
     });
   }
 
-  async findAll(query: GetCertificateDto) {
-    const { page = 1, pageSize = 10, ...filters } = query; // 获取分页参数，默认值为第1页，每页10条记录
+  // src/certificate/certificate.service.ts
 
-    const where: any = {};
+  async findAll(
+    query: GetCertificateDto,
+    currentUser: { id: number; role: string }, // 👈 注意：Prisma 的 id 是 Int，所以用 number
+  ) {
+    const { page = 1, pageSize = 10, ...filters } = query;
+    let where: any = {};
 
+    // 🔐 权限控制：学生只能看自己的证书
+    if (['USER', 'STUDENT'].includes(currentUser.role)) {
+      where.userId = currentUser.id;
+    }
+    // admin / teacher 不加限制 → 可查全部
+
+    // 其他过滤条件（保持原有逻辑）
     if (filters.username) {
       where.username = { contains: filters.username, mode: 'insensitive' };
     }
@@ -55,21 +66,14 @@ export class CertificateService {
     }
     if (filters.search) {
       where.OR = [
-        {
-          name: { contains: filters.search, mode: 'insensitive' },
-          mode: 'insensitive',
-        },
+        { name: { contains: filters.search, mode: 'insensitive' } },
         { username: { contains: filters.search, mode: 'insensitive' } },
       ];
     }
 
-    // 计算跳过的记录数
     const skip = (page - 1) * pageSize;
 
-    // 获取总记录数
     const total = await this.prisma.certificate.count({ where });
-
-    // 查询数据
     const certificates = await this.prisma.certificate.findMany({
       where,
       include: {
@@ -78,19 +82,15 @@ export class CertificateService {
       },
       skip,
       take: Number(pageSize),
-      orderBy: {
-        id: 'desc', // 根据需要调整排序规则
-      },
+      orderBy: { id: 'desc' },
     });
 
-    // 将用户信息展开到上层
     const transformedCertificates = certificates.map((cert) => ({
       ...cert,
-      name: cert.user ? cert.user.name : null, // 假设用户表中有name字段
-      userEmail: cert.user ? cert.user.email : null, // 假设用户表中有email字段
-      role: cert.user ? cert.user.role : null,
-      courseName: cert.course ? cert.course.title : null, // ✅ 新增：课程名称
-      // 可以添加更多用户信息...
+      name: cert.user?.name || null,
+      userEmail: cert.user?.email || null,
+      role: cert.user?.role || null,
+      courseName: cert.course?.title || null,
     }));
 
     return {

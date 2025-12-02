@@ -10,7 +10,6 @@ import { RegisterDto } from './dto/register.dto';
 import { generateToken } from './jwt.utils';
 @Injectable()
 export class AuthService {
-  // ✅ 必须用 export 导出
   constructor(private prisma: PrismaService) {}
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -28,6 +27,7 @@ export class AuthService {
         const accessToken = generateToken({
           id: user.id,
           username: user.username,
+          role: user.role,
         });
         return {
           ...user,
@@ -75,7 +75,7 @@ export class AuthService {
         username,
         // email,
         password: hashedPassword,
-        role: 'USER', // 默认角色
+        role: 'STUDENT', // 默认角色
       },
     });
     const accessToken = generateToken({ id: user.id, username: user.username });

@@ -60,8 +60,8 @@ export class CertificateController {
   @Get()
   @ApiOperation({ summary: '查询证书列表' })
   @ApiResponse({ status: 200, description: '返回证书列表' })
-  async findAll(@Query() query: GetCertificateDto) {
-    const res = await this.certificateService.findAll(query);
+  async findAll(@Query() query: GetCertificateDto, @Req() req) {
+    const res = await this.certificateService.findAll(query, req.user);
     return success(res);
   }
 

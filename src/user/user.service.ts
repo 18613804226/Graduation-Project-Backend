@@ -39,6 +39,7 @@ export class UserService {
       name: user.name,
       realName: user.name || user.username,
       role: user.role,
+      roles: [user.role],
       avatar: user.avatar || 'https://via.placeholder.com/100',
       // email: user.email, // 可选：加上邮箱
     };

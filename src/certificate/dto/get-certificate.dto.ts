@@ -23,4 +23,5 @@ export class GetCertificateDto {
 
   @IsOptional()
   search?: string;
+  role?: string;
 }
