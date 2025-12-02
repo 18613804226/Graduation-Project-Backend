@@ -282,7 +282,7 @@ export class AiService {
     });
 
     if (questions.length === 0) {
-      throw new NotFoundException('当前无有效试卷，请联系管理员');
+      throw new BadRequestException('当前无有效试卷，请联系管理员');
     }
 
     return questions;

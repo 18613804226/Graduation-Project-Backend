@@ -34,7 +34,7 @@ export class UserService {
     }
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException('User does not exist.'); // ✅ 会返回 404
+      throw new UnauthorizedException('User does not exist.'); // ✅ 会返回 404
     }
     // 3. 返回标准化用户信息（vben-admin 格式）
     return {
