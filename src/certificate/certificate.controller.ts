@@ -98,35 +98,21 @@ export class CertificateController {
     try {
       const cert = await this.certificateService.findOne(id);
 
-      // 读取 HTML 模板
-      let html: any = await readFile(
-        join(__dirname, '../assets/templates/certificate.html'),
-      );
-      html = html.toString(); // 确保是字符串
+      // ✅ 直接传结构化数据，不再拼 HTML
+      const pdfBuffer = await this.pdfService.generateCertificatePdf({
+        username: cert.username,
+        courseName: cert.course?.title || '未命名课程',
+        issuedAt: cert.issuedAt,
+        certificateId: String(cert.id).padStart(6, '0'),
+        // 如果需要印章，可以传路径或 base64（见下方说明）
+      });
 
-      // 读取印章 Base64
-      const sealBase64 = await readFileToBase64(
-        join(__dirname, '../assets/seal.png'),
-      );
-
-      // 替换模板变量
-      html = html
-        .replace('{{USERNAME}}', cert.username)
-        .replace('{{COURSE_NAME}}', cert.course?.title)
-        .replace('{{ISSUED_DATE}}', cert.issuedAt.toLocaleDateString('zh-CN'))
-        .replace('{{SEAL_BASE64}}', sealBase64)
-        .replace('{{FONT_BASE64}}', '');
-
-      // ✅ 关键修复：只调用 pdfService.htmlToPdf，不要操作浏览器！
-      const pdfBuffer = await this.pdfService.htmlToPdf(html); // 这里是 pdfService（小写）
-
-      // 返回 PDF
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
         `inline; filename="certificate-${id}.pdf"`,
       );
-      res.send(pdfBuffer);
+      res.end(pdfBuffer); // 注意：用 .end() 而不是 .send()（因为是 Buffer）
     } catch (error) {
       console.error('PDF Generation Error:', error);
       if (error instanceof NotFoundException) {
