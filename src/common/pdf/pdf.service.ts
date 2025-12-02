@@ -40,6 +40,20 @@ export class PdfService implements OnModuleInit {
     } else {
       console.log('🟡 PDF cache: RedisService not provided, using memory only');
     }
+    // ✅ 预热 pdfmake 引擎（关键优化！）
+    console.log('🔥 Warming up pdfmake engine...');
+    try {
+      const dummyDoc = pdfMake.createPdf({
+        content: ['Warm-up'],
+        defaultStyle: { font: 'Roboto' },
+      });
+      await new Promise<void>((resolve) => {
+        dummyDoc.getBuffer(() => resolve());
+      });
+      console.log('✅ pdfmake engine warmed up');
+    } catch (e) {
+      console.error('❌ pdfmake warm-up failed', e);
+    }
   }
 
   private generateCacheKey(templateName: string, data: any): string {
@@ -95,7 +109,7 @@ export class PdfService implements OnModuleInit {
     const cached = await this.getFromCache(cacheKey);
     if (cached) {
       console.log(`✅ PDF cache hit: ${cacheKey}`);
-      return cached;
+      return Buffer.from(cached);
     }
 
     console.log(`🔄 Generating PDF for ${templateName}`);
