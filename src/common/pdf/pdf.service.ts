@@ -1,6 +1,6 @@
 // src/common/pdf/pdf.service.ts
 import { Injectable } from '@nestjs/common';
-import { chromium, Browser } from 'playwright-core';
+import { chromium, Browser } from 'playwright';
 import { createHash } from 'crypto';
 import { RedisService } from '../redis/redis.service';
 
