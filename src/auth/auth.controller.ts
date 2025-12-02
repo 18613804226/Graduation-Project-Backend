@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Controller, Post, Body, Get, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request } from 'express'; // 👈 用 import type
 import { AuthService } from './auth.service';
 import { success, fail } from '../common/dto/response.dto'; // 👈 导入
 import { UserService } from '../user/user.service'; // 👈 新增导入
 import { RegisterDto } from './dto/register.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { verifyToken } from './jwt.utils';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -45,6 +55,31 @@ export class AuthController {
     } catch (error) {
       return fail('Failed to obtain permission code');
     }
+  }
+
+  // auth.controller.ts
+  @Post('logout')
+  @Public()
+  // @UseGuards(JwtAuthGuard) ← 删除这一行！
+  async logout(@Req() req, @Res() res) {
+    // 可选：尝试解析 token 获取用户 ID（用于日志）
+    const authHeader = req.headers['authorization'];
+    let userId = null;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const payload = verifyToken(token); // 你的验证函数
+        userId = payload?.id;
+      } catch (e) {
+        // token 无效？没关系，继续登出
+      }
+    }
+    // 如果你用了 Redis 黑名单，这里可以加（但非必须）
+    // await this.redisService.setex(`blacklist:${userId}`, ttl, '1');
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
   }
   // ✅ 新增：注册接口
   @Post('register')

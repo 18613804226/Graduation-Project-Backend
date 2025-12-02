@@ -37,12 +37,6 @@ export class AuthService {
     } catch (error) {
       console.error('❌ 密码比对失败:', error);
     }
-    console.log('🔍 查到的用户:', user);
-    console.log('🔑 输入的密码:', password);
-    console.log('🔒 数据库存的密码:', user?.password);
-    // console.log('❓ 是 bcrypt 格式吗?', user?.password?.startsWith('$2'));
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-
     return null;
   }
 

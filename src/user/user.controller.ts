@@ -22,17 +22,13 @@ export class UserController {
   constructor(private userService: UserService) {}
   @Get('info')
   async getCurrentUser(@Req() req: express.Request) {
-    try {
-      const authHeader = req.headers['authorization'];
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return fail('Please log in first.');
-      }
-      const token = authHeader.substring(7);
-      const userInfo = await this.userService.getCurrentUserInfo(token);
-      return success(userInfo);
-    } catch (error) {
-      return fail(error.message || 'Failed to retrieve user information');
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return fail('Please log in first.');
     }
+    const token = authHeader.substring(7);
+    const userInfo = await this.userService.getCurrentUserInfo(token);
+    return success(userInfo);
   }
   // ✅ 新增：查询所有用户（分页 + 搜索）
   @UseGuards(JwtAuthGuard) // 需要登录才能查看用户列表
@@ -65,8 +61,12 @@ export class UserController {
     @Body() dto: UpdateUserDto,
     @CurrentUser() currentUser: User,
   ) {
-    this.userService.updateUser(currentUser.id, dto, currentUser);
-    return success({ success: true, message: 'User Info Update Success' });
+    try {
+      await this.userService.updateUser(currentUser.id, dto, currentUser);
+      return success({ success: true, message: 'User Info Update Success' });
+    } catch (error) {
+      return fail(error.message || 'Failed to update profile');
+    }
   }
 
   @Put(':id') // 管理员修改他人信息

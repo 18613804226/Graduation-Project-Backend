@@ -26,10 +26,10 @@ model Course {
   title        String        @unique // 👈 改为 title
   description  String?
   cover        String?
-  teacherId    Int
+  teacherId    Int?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt // 建议加上
-  teacher      User          @relation(fields: [teacherId], references: [id])
+  teacher      User?         @relation(fields: [teacherId], references: [id])
   category     String?
   certificates Certificate[]
 }
@@ -89,11 +89,11 @@ model Certificate {
   courseName String? // 课程名
   issuedAt   DateTime @default(now())
   status     String?  @default("ACTIVE") // ACTIVE, EXPIRED
-  userId     Int
+  userId     Int?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   templateId Int
   // 关联关系
-  user       User     @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
   course     Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }

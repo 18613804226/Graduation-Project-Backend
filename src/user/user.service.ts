@@ -4,12 +4,14 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { verifyToken } from 'src/auth/jwt.utils';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { compare, hash } from 'bcryptjs';
 @Injectable()
 export class UserService {
@@ -25,12 +27,14 @@ export class UserService {
     if (!payload || !payload.id) {
       throw new UnauthorizedException('Invalid or expired tokens');
     }
-    // 2. 查询用户
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.id },
-    });
+    // 🔥 确保 id 是 number
+    const userId = Number(payload.id);
+    if (isNaN(userId)) {
+      throw new UnauthorizedException('Invalid user ID in token');
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new UnauthorizedException('User does not exist.');
+      throw new NotFoundException('User does not exist.'); // ✅ 会返回 404
     }
     // 3. 返回标准化用户信息（vben-admin 格式）
     return {
@@ -206,39 +210,39 @@ export class UserService {
   ): Promise<User> {
     const { name, username, newPassword, oldPassword, role } = dto;
 
-    // 1. 获取当前用户信息
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new Error('User does not exist.');
+      throw new BadRequestException('Invalid credentials.');
     }
 
-    // 2. 如果要改密码，验证旧密码
-    if (newPassword && oldPassword) {
-      const isMatch = await compare(oldPassword, user.password);
-      if (!isMatch) {
-        throw new Error('Old password incorrect');
-      }
-      // 加密新密码
-      const hashedPassword = await hash(newPassword, 10);
-      // 更新密码
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    }
-
-    // 3. 更新其他字段（非密码）
     const updateData: Partial<User> = {};
-    if (name) updateData.name = name;
-    if (username) updateData.username = username;
-    if (role && currentUser.role === 'ADMIN') {
+
+    // 处理密码更新
+    if (newPassword) {
+      if (!oldPassword) {
+        throw new BadRequestException(
+          'Old password is required when changing password.',
+        );
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        throw new BadRequestException('Invalid credentials.');
+      }
+      updateData.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    // 处理其他字段
+    if (name !== undefined) updateData.name = name;
+    if (username !== undefined) updateData.username = username;
+    if (role !== undefined && currentUser.role === 'ADMIN') {
       updateData.role = role;
     }
 
-    // 执行更新
+    if (Object.keys(updateData).length === 0) {
+      return user;
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: updateData,
