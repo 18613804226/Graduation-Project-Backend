@@ -1,3 +1,5 @@
+process.env.TZ = 'Europe/Minsk'; // 👈 加这一行！
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exception.filter';

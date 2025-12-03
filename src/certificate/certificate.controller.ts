@@ -28,9 +28,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { join } from 'path';
 // const fontPath = join(__dirname, '../assets/fonts/NotoSansSC-Regular.ttf');
 // import * as puppeteer from 'puppeteer-core';
-import { readFileToBase64 } from '../utils/file.util';
-import { readFile } from 'fs/promises';
+// import { readFileToBase64 } from '../utils/file.util';
+// import { readFile } from 'fs/promises';
 import { PdfService } from 'src/common/pdf/pdf.service';
+import { PrismaService } from 'prisma/prisma.service';
 @ApiTags('证书')
 @UseGuards(AuthGuard('jwt'))
 @Controller('certificates')
@@ -38,6 +39,7 @@ export class CertificateController {
   constructor(
     private readonly certificateService: CertificateService,
     private readonly pdfService: PdfService,
+    private readonly prisma: PrismaService, // 👈 新增
   ) {}
   @Post()
   async create(@Body('params') params: any, @Req() req) {
@@ -90,31 +92,105 @@ export class CertificateController {
     return success({ success: true, message: 'Delete Success' });
   }
 
-  @Get(':id/pdf')
-  async downloadPdf(
+  // @Get(':id/pdf')
+  // async downloadPdf(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Res() res: Response,
+  // ) {
+  //   try {
+  //     const cert = await this.certificateService.findOne(id);
+
+  //     // ✅ 直接传结构化数据，不再拼 HTML
+  //     const pdfBuffer = await this.pdfService.generateCertificatePdf({
+  //       username: cert.username,
+  //       courseName: cert.course?.title || '未命名课程',
+  //       issuedAt: cert.issuedAt,
+  //       certificateId: String(cert.id).padStart(6, '0'),
+  //       // 如果需要印章，可以传路径或 base64（见下方说明）
+  //     });
+
+  //     res.setHeader('Content-Type', 'application/pdf');
+  //     res.setHeader(
+  //       'Content-Disposition',
+  //       `inline; filename="certificate-${id}.pdf"`,
+  //     );
+  //     res.end(pdfBuffer); // 注意：用 .end() 而不是 .send()（因为是 Buffer）
+  //   } catch (error) {
+  //     console.error('PDF Generation Error:', error);
+  //     if (error instanceof NotFoundException) {
+  //       res.status(404).send('证书不存在');
+  //     } else {
+  //       res.status(500).send('证书生成失败');
+  //     }
+  //   }
+  // }
+
+  @Get(':id/pdf/preview')
+  @ApiOperation({ summary: '预览证书 PDF（不记录下载）' })
+  async previewPdf(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
     try {
       const cert = await this.certificateService.findOne(id);
-
-      // ✅ 直接传结构化数据，不再拼 HTML
       const pdfBuffer = await this.pdfService.generateCertificatePdf({
         username: cert.username,
         courseName: cert.course?.title || '未命名课程',
         issuedAt: cert.issuedAt,
         certificateId: String(cert.id).padStart(6, '0'),
-        // 如果需要印章，可以传路径或 base64（见下方说明）
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline'); // 预览
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('PDF Preview Error:', error);
+      if (error instanceof NotFoundException) {
+        res.status(404).send('证书不存在');
+      } else {
+        res.status(500).send('证书生成失败');
+      }
+    }
+  }
+  @Get(':id/pdf/download')
+  @ApiOperation({ summary: '下载证书 PDF（记录下载量）' })
+  async downloadPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req,
+    @Res() res: Response,
+  ) {
+    try {
+      // ✅ 确保用户已认证（虽然有全局 Guard，但显式检查更安全）
+      if (!req.user?.id) {
+        return res.status(401).send('请先登录');
+      }
+
+      const cert = await this.certificateService.findOne(id);
+      const pdfBuffer = await this.pdfService.generateCertificatePdf({
+        username: cert.username,
+        courseName: cert.course?.title || '未命名课程',
+        issuedAt: cert.issuedAt,
+        certificateId: String(cert.id).padStart(6, '0'),
+      });
+
+      // ✅【关键】只在 download 接口记录下载行为
+      await this.prisma.resourceDownload.create({
+        data: {
+          userId: req.user.id,
+          resourceId: id,
+          resourceType: 'certificate',
+          fileName: `certificate-${id}.pdf`,
+        },
       });
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
-        `inline; filename="certificate-${id}.pdf"`,
+        `attachment; filename="certificate-${id}.pdf"`, // ⚠️ attachment 触发下载
       );
-      res.end(pdfBuffer); // 注意：用 .end() 而不是 .send()（因为是 Buffer）
+      res.end(pdfBuffer);
     } catch (error) {
-      console.error('PDF Generation Error:', error);
+      console.error('PDF Download Error:', error);
       if (error instanceof NotFoundException) {
         res.status(404).send('证书不存在');
       } else {

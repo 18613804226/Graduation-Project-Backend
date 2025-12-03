@@ -8,17 +8,21 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  username     String        @unique
-  email        String?       @unique
-  password     String
-  nickname     String?
-  role         String        @default("STUDENT")
-  avatar       String?
-  createdAt    DateTime      @default(now())
-  name         String?
-  courses      Course[]
-  certificates Certificate[]
+  id                Int                @id @default(autoincrement())
+  username          String             @unique
+  email             String?            @unique
+  password          String
+  nickname          String?
+  role              String             @default("STUDENT")
+  avatar            String?
+  createdAt         DateTime           @default(now())
+  name              String?
+  status            String             @default("ACTIVE") // 添加状态字段
+  courses           Course[]
+  certificates      Certificate[]
+  visitLogs         VisitLog[]
+  studyLogs         StudyLog[]
+  resourceDownloads ResourceDownload[]
 }
 
 model Course {
@@ -32,6 +36,7 @@ model Course {
   teacher      User?         @relation(fields: [teacherId], references: [id])
   category     String?
   certificates Certificate[]
+  studyLogs    StudyLog[]
 }
 
 model PublishedExam {
@@ -96,4 +101,68 @@ model Certificate {
   // 关联关系
   user       User?    @relation(fields: [userId], references: [id])
   course     Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+}
+
+model VisitLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int? // 可关联已登录用户
+  ip         String?
+  userAgent  String?
+  path       String // 如 /api/courses, /dashboard
+  method     String // GET, POST...
+  statusCode Int // 200, 404...
+  duration   Int? // 响应耗时（毫秒）
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([path, createdAt])
+}
+
+model StudyLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int?
+  lessonId  Int? // 如果有 lesson 模型
+  action    String // "watch_video", "complete_lesson", "start_exam", "download_resource"
+  metadata  Json? // 额外信息 { videoId: 123, progress: 80 }
+  duration  Int? // 学习时长（秒）
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id])
+  course Course? @relation(fields: [courseId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ResourceDownload {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  resourceId   Int // 可指向课程资料、附件等
+  resourceType String // "course_material", "certificate_pdf", "exam_template"
+  fileName     String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([resourceType, createdAt])
+}
+
+// prisma/schema.prisma
+
+model PageView {
+  id       Int      @id @default(autoincrement())
+  ip       String?
+  userId   Int?
+  path     String // 页面路径，如 "/"
+  viewedAt DateTime @default(now())
+
+  @@index([viewedAt])
+  @@index([ip])
+  @@index([userId])
 }
