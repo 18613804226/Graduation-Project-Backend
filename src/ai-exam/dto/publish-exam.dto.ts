@@ -1,8 +1,15 @@
-import { IsArray, IsString, IsNumber, ArrayMinSize } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNumber,
+  ArrayMinSize,
+  IsOptional,
+} from 'class-validator';
 
 export class PublishExamDto {
+  @IsOptional()
   @IsString()
-  title: string;
+  title?: string;
 
   @IsString()
   subject: string;
@@ -13,22 +20,33 @@ export class PublishExamDto {
   @IsString()
   questionType: string;
 
+  @IsOptional()
   @IsString()
-  createdBy: string;
+  createdBy?: string;
 
+  // ✅ 方式一：通过题库 ID 选题（可选）
   @IsArray()
   @ArrayMinSize(1)
   @IsNumber({}, { each: true })
-  questionIds: number[]; // ← 用于从题库中选题
+  @IsOptional()
+  questionIds?: number[];
 
-  // ✅ 新增：如果要传题目内容（不是 ID），就加这个
+  // ✅ 方式二：直接传题目内容（可选）
   @IsArray()
   @ArrayMinSize(1)
+  @IsOptional()
   questions?: {
-    // 👈 可选字段，用于 AI 直接生成题目
+    id?: number;
     question: string;
     options: string[];
     answer: string;
     explanation?: string;
   }[];
+
+  // ✅ 新增：必须传一个（要么 questionIds，要么 questions）
+  validate() {
+    if (!this.questionIds && !this.questions) {
+      throw new Error('必须提供 questionIds 或 questions 中至少一个');
+    }
+  }
 }

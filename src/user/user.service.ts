@@ -8,35 +8,36 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { verifyToken } from 'src/auth/jwt.utils';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { compare, hash } from 'bcryptjs';
+// import { compare, hash } from 'bcryptjs';
+import { AuthService } from '../auth/auth.service'; // ✅ 导入 AuthServic
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private authService: AuthService,
+  ) {}
 
   // ✅ 新增：通过 accessToken 获取当前用户信息
   async getCurrentUserInfo(accessToken: string) {
     if (!accessToken) {
       throw new UnauthorizedException('No access token provided');
     }
-    // 1. 验证并解析 token
-    const payload = verifyToken(accessToken);
-    if (!payload || !payload.id) {
+    const payload = this.authService.verifyToken(accessToken);
+    // ✅ 关键修复：用 payload.sub，不是 payload.id
+    if (!payload || !payload.sub) {
       throw new UnauthorizedException('Invalid or expired tokens');
     }
-    // 🔥 确保 id 是 number
-    const userId = Number(payload.id);
+    const userId = Number(payload.sub);
     if (isNaN(userId)) {
       throw new UnauthorizedException('Invalid user ID in token');
     }
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new UnauthorizedException('User does not exist.'); // ✅ 会返回 404
+      throw new UnauthorizedException('User does not exist.');
     }
-    // 3. 返回标准化用户信息（vben-admin 格式）
     return {
       id: user.id,
       username: user.username,
@@ -45,7 +46,6 @@ export class UserService {
       role: user.role,
       roles: [user.role],
       avatar: user.avatar || 'https://via.placeholder.com/100',
-      // email: user.email, // 可选：加上邮箱
     };
   }
   // 根据ID查询用户
@@ -224,7 +224,12 @@ export class UserService {
           'Old password is required when changing password.',
         );
       }
-
+      // 检查用户是否有密码
+      if (!user.password) {
+        throw new BadRequestException(
+          'The account does not have a password and cannot be changed.',
+        );
+      }
       const isMatch = await bcrypt.compare(oldPassword, user.password);
       if (!isMatch) {
         throw new BadRequestException('Invalid credentials.');

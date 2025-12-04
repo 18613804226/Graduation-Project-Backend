@@ -7,6 +7,8 @@ import {
   Req,
   Res,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import type { Request } from 'express'; // 👈 用 import type
 import { AuthService } from './auth.service';
@@ -15,12 +17,19 @@ import { UserService } from '../user/user.service'; // 👈 新增导入
 import { RegisterDto } from './dto/register.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { verifyToken } from './jwt.utils';
+// import { verifyToken } from './jwt.utils';
+import { GuestLoginDto } from './dto/guest-login.dto';
+import { ApiResponse } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from './dto/create-user.dto';
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private readonly jwtService: JwtService, // ✅ 注入 JwtService
   ) {}
 
   @Post('login')
@@ -56,31 +65,23 @@ export class AuthController {
       return fail('Failed to obtain permission code');
     }
   }
-
-  // auth.controller.ts
-  @Post('logout')
+  @Post('/logout')
   @Public()
-  // @UseGuards(JwtAuthGuard) ← 删除这一行！
   async logout(@Req() req, @Res() res) {
-    // 可选：尝试解析 token 获取用户 ID（用于日志）
     const authHeader = req.headers['authorization'];
     let userId = null;
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const payload = verifyToken(token); // 你的验证函数
-        userId = payload?.id;
+        const payload = this.jwtService.verify(token); // ✅ 官方方法
+        userId = payload.sub;
       } catch (e) {
-        // token 无效？没关系，继续登出
+        // ignore invalid token
       }
     }
-    // 如果你用了 Redis 黑名单，这里可以加（但非必须）
-    // await this.redisService.setex(`blacklist:${userId}`, ttl, '1');
-    return res.status(200).json({
-      success: true,
-      message: 'Logged out successfully',
-    });
+    return res.status(200).json({ success: true, message: 'Logged out' });
   }
+
   // ✅ 新增：注册接口
   @Post('register')
   @Public()
@@ -97,5 +98,27 @@ export class AuthController {
     } catch (error) {
       return fail(error.message);
     }
+  }
+
+  @Post('create')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN') // 👈 只有 ADMIN 能调用
+  async create(@Body() createUserDto: CreateUserDto) {
+    const user = await this.authService.createByAdmin(createUserDto);
+    return success(user);
+  }
+
+  @Public()
+  @Post('guest-login')
+  async guestLogin(@Body() dto: GuestLoginDto) {
+    const res = await this.authService.guestLogin(dto);
+    return success(res);
+    // return success({
+    //   id: user.id,
+    //   username: user.username,
+    //   realName: user.name || user.username,
+    //   roles: [user.role],
+    //   accessToken: user.accessToken,
+    // })
   }
 }

@@ -32,10 +32,11 @@ if (envFile && fs.existsSync(envFile)) {
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
 @Controller('ai-exam')
 export class AiController {
+  prisma: any;
   constructor(private readonly aiService: AiService) {}
 
   @Post('generate-questions')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
+  // @UsePipes(new ValidationPipe({ whitelist: true }))
   async generateQuestions(@Body() dto: GenerateQuestionDto) {
     try {
       const questions = await this.aiService.generateQuestions(dto);
@@ -136,8 +137,39 @@ export class AiController {
   // ✅ 发布固定试卷（管理员/AI调用）
   @Post('publish')
   async publishExam(@Body() dto: PublishExamDto) {
-    this.aiService.setCurrentExam(dto);
-    return success({ success: true, message: 'Published successfully' });
+    if (dto.questionIds) {
+      // 从题库中查题
+      const questions = await this.prisma.examQuestion.findMany({
+        where: { id: { in: dto.questionIds } },
+        select: {
+          id: true,
+          question: true,
+          options: true,
+          answer: true,
+          explanation: true,
+        },
+      });
+      const res = await this.aiService.setCurrentExam({
+        ...dto,
+        questions,
+        validate: function (): void {
+          throw new Error('Function not implemented.');
+        },
+      });
+      return success({ success: true, ...res });
+    }
+
+    if (dto.questions) {
+      // 使用 AI 生成题目
+      const res = await this.aiService.setCurrentExam({
+        ...dto,
+        questions: dto.questions,
+        validate: function (): void {
+          throw new Error('Function not implemented.');
+        },
+      });
+      return success({ success: true, ...res });
+    }
   }
 
   @Get('current')

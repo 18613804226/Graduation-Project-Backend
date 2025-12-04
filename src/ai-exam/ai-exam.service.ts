@@ -4,29 +4,41 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import axios from 'axios';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
+import { HttpService } from '@nestjs/axios'; // ✅ 新增
+import { firstValueFrom } from 'rxjs'; // ✅ 用于转换 Observable → Promise
+import { ConfigService } from '@nestjs/config'; // ✅ 推荐方式获取 env
+
 import { SaveToBankDto } from './dto/save-to-bank.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublishExamDto } from './dto/publish-exam.dto';
 
 // 设置环境
-const envFile =
-  process.env.NODE_ENV === 'development'
-    ? '.env.development'
-    : '.env.production';
+// const envFile =
+//   process.env.NODE_ENV === 'development'
+//     ? '.env.development'
+//     : '.env.production';
 
-if (envFile && fs.existsSync(envFile)) {
-  dotenv.config({ path: envFile });
-} else {
-  console.warn(`⚠️ ${envFile} not found`);
-}
-const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
+// if (envFile && fs.existsSync(envFile)) {
+//   dotenv.config({ path: envFile });
+// } else {
+//   console.warn(`⚠️ ${envFile} not found`);
+// }
+// const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
 
 @Injectable()
 export class AiService {
-  constructor(private prisma: PrismaService) {}
+  DASHSCOPE_API_KEY: string;
+  constructor(
+    private prisma: PrismaService,
+    private httpService: HttpService, // ✅ 注入
+    private configService: ConfigService, // ✅ 获取配置
+  ) {
+    this.DASHSCOPE_API_KEY =
+      this.configService.get<string>('DASHSCOPE_API_KEY')!;
+    if (!this.DASHSCOPE_API_KEY) {
+      throw new Error('DASHSCOPE_API_KEY is not defined in environment');
+    }
+  }
 
   async generateQuestions(dto: any): Promise<any[]> {
     const { subject, difficulty, questionType, count } = dto;
@@ -43,19 +55,22 @@ export class AiService {
 `;
 
     try {
-      const res = await axios.post(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-        {
-          model: 'qwen-plus',
-          input: { messages: [{ role: 'user', content: prompt }] },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
-            'Content-Type': 'application/json',
+      // ✅ 使用 HttpService 替代 axios
+      const res = await firstValueFrom(
+        this.httpService.post(
+          'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+          {
+            model: 'qwen-plus',
+            input: { messages: [{ role: 'user', content: prompt }] },
           },
-          timeout: 60000,
-        },
+          {
+            headers: {
+              Authorization: `Bearer ${this.DASHSCOPE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            // timeout 已在 HttpModule.register 中设置，可省略
+          },
+        ),
       );
 
       if (res.data.error) {
@@ -72,7 +87,7 @@ export class AiService {
       }
 
       return JSON.parse(cleanedContent);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI 调用失败:', error.response?.data || error.message);
       throw new Error('AI 服务暂时不可用，请稍后再试');
     }

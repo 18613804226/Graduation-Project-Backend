@@ -1,12 +1,12 @@
 // src/auth/jwt.strategy.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { verifyToken } from './jwt.utils';
+import { PrismaService } from '../../prisma/prisma.service'; // 根据实际情况调整导入路径
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -14,10 +14,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { id: number; username: string }) {
-    // 可选：查数据库确认用户是否存在
-    // const user = await this.userService.findById(payload.id);
-    // if (!user) throw new UnauthorizedException();
-    return payload;
+  async validate(payload: { sub: number; username: string }) {
+    // 根据JWT中的sub字段查询用户信息
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        username: true,
+        role: true, // 确保这里选择了role字段
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    return user; // 返回包含role等信息的用户对象
   }
 }

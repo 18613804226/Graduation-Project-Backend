@@ -1,5 +1,11 @@
 // get-certificate.dto.ts
-import { IsOptional, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsNumber,
+  Min,
+  IsDateString,
+  ValidateIf,
+} from 'class-validator';
 
 export class GetCertificateDto {
   @IsOptional()
@@ -24,4 +30,15 @@ export class GetCertificateDto {
   @IsOptional()
   search?: string;
   role?: string;
+
+  // ✅ 只有当 startDate 不为空时，才校验是否为日期
+  @ValidateIf((o) => o.startDate !== undefined && o.startDate !== '')
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ValidateIf((o) => o.endDate !== undefined && o.endDate !== '')
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 }
