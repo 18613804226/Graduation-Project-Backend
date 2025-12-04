@@ -16,7 +16,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
-    const isPublic = this.reflector.getAllAndOverride < boolean > ('isPublic', [
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -35,9 +35,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw new UnauthorizedException(message);
     }
 
+    // ✅ 白名单：允许游客访问的特殊接口
+    const request = context.switchToHttp().getRequest<Request>();
+    const path = request.path;
+    const allowedPaths = ['/api/v1/track/page-view'];
+
     // ✅ 关键：禁止游客执行非 GET 请求
-    const request = context.switchToHttp().getRequest < Request > ();
-    if (user.role === 'GUEST' && request.method !== 'GET') {
+    if (
+      user.role === 'GUEST' &&
+      request.method !== 'GET' &&
+      !allowedPaths.includes(path)
+    ) {
       throw new ForbiddenException('Guest accounts only support viewing.');
     }
 
