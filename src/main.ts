@@ -1,5 +1,5 @@
 // src/main.ts
-process.env.TZ = 'Europe/Minsk'; // 👈 设置时区（OK）
+// process.env.TZ = 'Europe/Minsk'; // 👈 设置时区（OK）
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';

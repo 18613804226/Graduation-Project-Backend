@@ -65,43 +65,49 @@ export class DashboardService {
   // src/dashboard/dashboard.service.ts
   // 👇 新增方法：获取近12个月的访问量
   private async getMonthlyVisits(): Promise<MonthVisit[]> {
-    // 获取当前年月
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-11
+    // Step 1: 查询数据库中按明斯克时区分组的月度访问量
+    const dbResults = await this.prisma.$queryRaw<
+      { year: number; month: number; count: bigint }[]
+    >`
+      SELECT 
+        EXTRACT(YEAR FROM "viewedAt" AT TIME ZONE 'Europe/Minsk')::INTEGER AS year,
+        EXTRACT(MONTH FROM "viewedAt" AT TIME ZONE 'Europe/Minsk')::INTEGER AS month,
+        COUNT(*) AS count
+      FROM "PageView"
+      WHERE 
+        "viewedAt" >= NOW() - INTERVAL '12 months'
+      GROUP BY 
+        EXTRACT(YEAR FROM "viewedAt" AT TIME ZONE 'Europe/Minsk'),
+        EXTRACT(MONTH FROM "viewedAt" AT TIME ZONE 'Europe/Minsk')
+      ORDER BY year, month;
+    `;
 
-    // 构造最近12个月的年月列表（从12个月前到本月）
-    const months: { year: number; month: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      months.push({
-        year: date.getFullYear(),
-        month: date.getMonth(), // 0-11
-      });
+    // 转为 Map 便于查找：key = "2025-12"
+    const dbMap = new Map<string, number>();
+    for (const row of dbResults) {
+      const key = `${row.year}-${String(row.month).padStart(2, '0')}`;
+      dbMap.set(key, Number(row.count));
     }
 
-    // 查询每个月的 PageView 数量
-    const results = await Promise.all(
-      months.map(async ({ year, month }) => {
-        const start = new Date(year, month, 1);
-        const end = new Date(year, month + 1, 1); // 下个月1号
+    // Step 2: 构造最近 12 个自然月（基于当前明斯克时间）
+    const nowInMinsk = new Date(); // 注意：这个 Date 是 UTC，但我们只用它算日历
+    // 由于 Render 是 UTC，我们手动模拟“如果现在是明斯克时间”的年月
+    // 实际上，我们只需要生成连续的 12 个月字符串，不依赖服务器时区
 
-        const count = await this.prisma.pageView.count({
-          where: {
-            viewedAt: {
-              gte: start,
-              lt: end,
-            },
-          },
-        });
+    const allMonths: MonthVisit[] = [];
+    const today = new Date();
+    // 回溯 11 个月 + 当前月 = 12 个月
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1; // JS 月份是 0-11，+1 变成 1-12
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      const label = `${m}月`;
+      const value = dbMap.get(key) || 0;
+      allMonths.push({ month: label, value });
+    }
 
-        // 格式化为 "1月", "2月", ..., "12月"
-        const monthLabel = `${month + 1}月`;
-        return { month: monthLabel, value: count };
-      }),
-    );
-
-    return results;
+    return allMonths;
   }
 
   private async getTrafficTrend(): Promise<TrafficPoint[]> {
