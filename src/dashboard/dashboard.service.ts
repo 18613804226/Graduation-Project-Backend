@@ -111,16 +111,24 @@ export class DashboardService {
   }
 
   private async getTrafficTrend(): Promise<TrafficPoint[]> {
-    const now = new Date();
-    // 因为 TZ=Europe/Minsk，now.getFullYear() 等就是本地日历
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 3600 * 1000);
+    // 明斯克 = UTC+3，所以“明斯克今天 00:00” = UTC 时间减 3 小时
+    const nowUtc = new Date();
+    const minskOffsetMs = 3 * 60 * 60 * 1000; // 3小时毫秒数
 
-    // ✅ 关键：使用 'Europe/Minsk' 而不是 'Asia/Shanghai'
+    // 计算“明斯克当前时间”
+    const minskNow = new Date(nowUtc.getTime() + minskOffsetMs);
+    // 构造“明斯克今天 00:00:00”
+    const minskTodayStart = new Date(
+      minskNow.getFullYear(),
+      minskNow.getMonth(),
+      minskNow.getDate(),
+    );
+    // 转回 UTC 时间（用于查询）
+    const startOfDayInUtc = new Date(minskTodayStart.getTime() - minskOffsetMs);
+    const endOfDayInUtc = new Date(
+      startOfDayInUtc.getTime() + 24 * 3600 * 1000,
+    );
+
     const results = await this.prisma.$queryRaw<
       { hour: number; uv_count: bigint }[]
     >`
@@ -129,8 +137,8 @@ export class DashboardService {
       COUNT(DISTINCT "userId") AS uv_count
     FROM "PageView"
     WHERE 
-      "viewedAt" >= ${startOfDay} 
-      AND "viewedAt" < ${endOfDay}
+      "viewedAt" >= ${startOfDayInUtc}
+      AND "viewedAt" < ${endOfDayInUtc}
       AND "userId" IS NOT NULL
     GROUP BY EXTRACT(HOUR FROM "viewedAt" AT TIME ZONE 'Europe/Minsk')
     ORDER BY hour;
