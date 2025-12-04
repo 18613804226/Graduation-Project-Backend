@@ -40,7 +40,11 @@ async function bootstrap() {
       },
       exceptionFactory: (errors) => {
         console.error('❌ Validation Errors:', errors);
-        return new BadRequestException('请检查请求体格式');
+        return new BadRequestException(
+          errors
+            .map((err: any) => Object.values(err.constraints)[0])
+            .toString(),
+        );
       },
     }),
   );

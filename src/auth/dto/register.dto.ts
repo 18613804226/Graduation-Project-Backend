@@ -7,7 +7,7 @@ export class RegisterDto {
   //   email: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(3)
   password: string;
 
   @IsString()

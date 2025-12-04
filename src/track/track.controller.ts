@@ -7,7 +7,6 @@ import { success } from 'src/common/dto/response.dto';
 @Controller('track')
 export class TrackController {
   constructor(private trackService: TrackService) {}
-  @UseGuards(AuthGuard('jwt'))
   @Post('page-view')
   async recordPageView(@Req() req, @Body() body: { path?: string }) {
     const ip = req.ip;

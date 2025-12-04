@@ -33,7 +33,7 @@ import { join } from 'path';
 import { PdfService } from 'src/common/pdf/pdf.service';
 import { PrismaService } from 'prisma/prisma.service';
 @ApiTags('证书')
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('certificates')
 export class CertificateController {
   constructor(
