@@ -132,17 +132,17 @@ export class DashboardService {
     const results = await this.prisma.$queryRaw<
       { hour: number; uv_count: bigint }[]
     >`
-    SELECT 
-      EXTRACT(HOUR FROM "viewedAt" AT TIME ZONE 'Europe/Minsk') AS hour,
-      COUNT(DISTINCT "userId") AS uv_count
-    FROM "PageView"
-    WHERE 
-      "viewedAt" >= ${startOfDayInUtc}
-      AND "viewedAt" < ${endOfDayInUtc}
-      AND "userId" IS NOT NULL
-    GROUP BY EXTRACT(HOUR FROM "viewedAt" AT TIME ZONE 'Europe/Minsk')
-    ORDER BY hour;
-  `;
+  SELECT 
+    EXTRACT(HOUR FROM ("viewedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Minsk') AS hour,
+    COUNT(DISTINCT "userId") AS uv_count
+  FROM "PageView"
+  WHERE 
+    "viewedAt" >= ${startOfDayInUtc}
+    AND "viewedAt" < ${endOfDayInUtc}
+    AND "userId" IS NOT NULL
+  GROUP BY EXTRACT(HOUR FROM ("viewedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Minsk')
+  ORDER BY hour;
+`;
 
     const hours: TrafficPoint[] = Array.from({ length: 24 }, (_, i) => ({
       time: `${i}:00`,

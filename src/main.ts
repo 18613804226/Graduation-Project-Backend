@@ -25,7 +25,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 2. 设置全局前缀
+  // 2. 设置全局前缀 // 排除 health 接口，因为它不需要版本控制且用于服务监控
   app.setGlobalPrefix('api/v1', {
     exclude: ['health'],
   });

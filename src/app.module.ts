@@ -23,6 +23,7 @@ import { AIExamModule } from './ai-exam/ai-exam.moudle';
 import { WeatherModule } from './weather/weather.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TrackModule } from './track/track.module';
+import { HealthModule } from './health/health.module';
 @Module({
   controllers: [
     /* ... */
@@ -48,6 +49,7 @@ import { TrackModule } from './track/track.module';
     WeatherModule,
     DashboardModule,
     TrackModule,
+    HealthModule,
     // ...其他模块
   ],
 })

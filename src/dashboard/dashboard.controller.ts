@@ -16,26 +16,26 @@ export class DashboardController {
     const res = await this.dashboardService.getDashboardData();
     return success(res);
   }
-  @Get('debug-time')
-  @Public()
-  async debugTime() {
-    const now = new Date();
-    const sampleView = await this.prisma.pageView.findFirst({
-      orderBy: { id: 'desc' },
-    });
+  // @Get('debug-time')
+  // @Public()
+  // async debugTime() {
+  //   const now = new Date();
+  //   const sampleView = await this.prisma.pageView.findFirst({
+  //     orderBy: { id: 'desc' },
+  //   });
 
-    // 明斯克 = UTC+3（全年固定）
-    const toMinskString = (utcDate: Date) => {
-      const minsk = new Date(utcDate.getTime() + 3 * 60 * 60 * 1000);
-      return minsk.toISOString().replace('T', ' ').slice(0, 19);
-    };
+  //   // 明斯克 = UTC+3（全年固定）
+  //   const toMinskString = (utcDate: Date) => {
+  //     const minsk = new Date(utcDate.getTime() + 3 * 60 * 60 * 1000);
+  //     return minsk.toISOString().replace('T', ' ').slice(0, 19);
+  //   };
 
-    return {
-      serverNow_UTC: now.toISOString(),
-      lastVisit_UTC: sampleView?.viewedAt?.toISOString() || null,
-      lastVisit_Minsk: sampleView?.viewedAt
-        ? toMinskString(new Date(sampleView.viewedAt))
-        : null,
-    };
-  }
+  //   return {
+  //     serverNow_UTC: now.toISOString(),
+  //     lastVisit_UTC: sampleView?.viewedAt?.toISOString() || null,
+  //     lastVisit_Minsk: sampleView?.viewedAt
+  //       ? toMinskString(new Date(sampleView.viewedAt))
+  //       : null,
+  //   };
+  // }
 }
