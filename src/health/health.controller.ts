@@ -2,9 +2,9 @@
 import { Controller, Get } from '@nestjs/common';
 import { Public } from 'src/common/decorators/public.decorator';
 
-@Controller()
+@Controller('health')
 export class HealthController {
-  @Get('health')
+  @Get()
   @Public()
   check() {
     return {
