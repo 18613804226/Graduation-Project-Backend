@@ -8,5 +8,6 @@ import { CommonModule } from '../common/common.module';
   imports: [CommonModule],
   controllers: [CertificateController],
   providers: [CertificateService, PrismaService],
+  exports: [CertificateService], // ✅ 必须导出
 })
 export class CertificateModule {}

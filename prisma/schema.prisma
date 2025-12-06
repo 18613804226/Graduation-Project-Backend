@@ -23,32 +23,41 @@ model User {
   visitLogs         VisitLog[]
   studyLogs         StudyLog[]
   resourceDownloads ResourceDownload[]
+  examResults       ExamResult[]
+  activityLogs      ActivityLog[]
 }
 
 model Course {
-  id           Int           @id @default(autoincrement())
-  title        String        @unique // 👈 改为 title
-  description  String?
-  cover        String?
-  teacherId    Int?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt // 建议加上
-  teacher      User?         @relation(fields: [teacherId], references: [id])
-  category     String?
-  certificates Certificate[]
-  studyLogs    StudyLog[]
+  id            Int            @id @default(autoincrement())
+  title         String         @unique // 👈 改为 title
+  description   String?
+  cover         String?
+  teacherId     Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt // 建议加上
+  teacher       User?          @relation(fields: [teacherId], references: [id])
+  category      String?
+  certificates  Certificate[]
+  studyLogs     StudyLog[]
+  examTemplates ExamTemplate[]
 }
 
 model PublishedExam {
-  id           Int            @id @default(autoincrement())
-  title        String
-  subject      String
-  difficulty   String
-  questionType String
-  createdAt    DateTime       @default(now())
-  createdBy    String
-  status       String         @default("active")
-  questions    ExamQuestion[]
+  id          Int            @id @default(autoincrement())
+  title       String
+  subject     String
+  difficulty  String
+  createdAt   DateTime       @default(now())
+  createdBy   String
+  status      String         @default("active")
+  isCurrent   Boolean        @default(false) // ✅ mark current exam
+  templateId  Int?
+  template    ExamTemplate?  @relation(fields: [templateId], references: [id])
+  questions   ExamQuestion[]
+  duration    Int            @default(0) // ✅ 冗余存储考试时长
+  examResults ExamResult[]
+
+  @@index([isCurrent]) // ✅ faster lookup for current exam
 }
 
 model ExamQuestion {
@@ -61,20 +70,24 @@ model ExamQuestion {
   difficulty      String
   questionType    String
   options         Json
-  optionsHash     String? // 可选，但推荐
-  publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
+  score           Int            @default(10)
   publishedExamId Int?
-  isCurrentExam   Boolean        @default(false) // 👈 新增字段！
+  publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
+  isCurrentExam   Boolean        @default(false) // ✅ 加这一行
+  optionsHash     String? // ✅ 添加这一行
 
-  @@index([subject, difficulty, questionType])
-  @@index([isCurrentExam]) // 👈 加索引，查询更快
+  @@index([publishedExamId])
 }
 
 model ExamTemplate {
-  id       Int           @id @default(autoincrement())
-  name     String        @unique
-  duration Int
-  sections ExamSection[]
+  id           Int             @id @default(autoincrement())
+  name         String          @unique
+  duration     Int
+  sections     ExamSection[]
+  courseId     Int?
+  exams        PublishedExam[] // optional back-reference
+  course       Course?         @relation(fields: [courseId], references: [id])
+  passingScore Int?            @default(60) // ✅ 新增字段
 }
 
 model ExamSection {
@@ -82,8 +95,8 @@ model ExamSection {
   questionType String
   count        Int
   score        Int
-  template     ExamTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId   Int
+  template     ExamTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 }
 
 model Certificate {
@@ -165,4 +178,29 @@ model PageView {
   @@index([viewedAt])
   @@index([ip])
   @@index([userId])
+}
+
+model ExamResult {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  examId    Int
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id])
+  exam PublishedExam @relation(fields: [examId], references: [id])
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  actionType String
+  targetId   Int? // 可为空
+  targetType String? // 可为空
+  content    String
+  isPublic   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

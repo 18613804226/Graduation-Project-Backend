@@ -27,6 +27,7 @@ export class ExamTemplateService {
       data: {
         name: createDto.name,
         duration: createDto.duration,
+        courseId: createDto.courseId, // ✅ 新增这一行
         sections: {
           createMany: {
             data: createDto.sections.map((section) => ({
@@ -43,14 +44,27 @@ export class ExamTemplateService {
   }
 
   async findAll() {
-    return this.prisma.examTemplate.findMany({
+    const templates = await this.prisma.examTemplate.findMany({
       include: {
         sections: true,
       },
     });
+    // 在返回前计算 totalScore
+    return templates.map((template) => {
+      const totalScore = template.sections.reduce((sum, section) => {
+        return sum + section.score * section.count;
+      }, 0);
+
+      return {
+        ...template,
+        totalScore, // ✅ 自动计算字段
+      };
+    });
   }
 
-  async findOne(id: number): Promise<GetExamTemplateDto> {
+  async findOne(
+    id: number,
+  ): Promise<GetExamTemplateDto & { totalScore: number }> {
     const template = await this.prisma.examTemplate.findUnique({
       where: { id },
       include: {
@@ -60,11 +74,17 @@ export class ExamTemplateService {
 
     if (!template) throw new NotFoundException(`模板 ID ${id} 不存在`);
 
+    // 自动计算总分
+    const totalScore = template.sections.reduce((sum, section) => {
+      return sum + section.score * section.count;
+    }, 0);
+
     return {
       id: template.id,
       name: template.name,
       duration: template.duration,
       sections: template.sections,
+      totalScore, // ✅ 新增字段
     };
   }
 

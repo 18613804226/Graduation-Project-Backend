@@ -24,6 +24,7 @@ import { WeatherModule } from './weather/weather.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TrackModule } from './track/track.module';
 import { HealthModule } from './health/health.module';
+import { ActivityLogModule } from './activity-log/activity-log.module';
 @Module({
   controllers: [
     /* ... */
@@ -50,6 +51,7 @@ import { HealthModule } from './health/health.module';
     DashboardModule,
     TrackModule,
     HealthModule,
+    ActivityLogModule,
     // ...其他模块
   ],
 })

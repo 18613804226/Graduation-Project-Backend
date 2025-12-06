@@ -26,7 +26,7 @@ export class CertificateService {
     });
 
     if (existing) {
-      throw new BadRequestException('证书已存在');
+      throw new BadRequestException('The certificate already exists.');
     }
 
     return this.prisma.certificate.create({

@@ -5,5 +5,6 @@ import { ExamTemplateService } from './exam-template.service';
 @Module({
   controllers: [ExamTemplateController],
   providers: [ExamTemplateService],
+  exports: [ExamTemplateService],
 })
 export class ExamTemplateModule {}

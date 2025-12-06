@@ -4,6 +4,7 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exception.filter';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 // import * as dotenv from 'dotenv';
 // import * as fs from 'fs';
 // import { JwtAuthGuard } from './auth/jwt-auth.guard';
@@ -17,7 +18,15 @@ import { AllExceptionsFilter } from './exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  //swagger文档
+  const config = new DocumentBuilder()
+    .setTitle('API')
+    .setDescription('接口文档')
+    .setVersion('1.0')
+    .build();
 
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document);
   // 1. 设置 CORS
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5777';
   app.enableCors({

@@ -8,15 +8,20 @@ import {
   Get,
   ParseIntPipe,
   Param,
+  Req,
 } from '@nestjs/common';
 import { AiService } from './ai-exam.service';
 import { GenerateQuestionDto } from './dto/generate-question.dto';
+import { GeneratedQuestion } from './dto/generated-question.dto';
 import { success, fail } from 'src/common/dto/response.dto';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import { SaveToBankDto } from './dto/save-to-bank.dto';
 import { PublishExamDto } from './dto/publish-exam.dto';
+import { ApiResponse } from 'src/common/types/api-response.type';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JudgeExamDto } from './dto/judge-xam.dto';
 
 // 设置环境
 const envFile =
@@ -35,16 +40,19 @@ export class AiController {
   prisma: any;
   constructor(private readonly aiService: AiService) {}
 
+  @ApiTags('AI 出题')
   @Post('generate-questions')
-  // @UsePipes(new ValidationPipe({ whitelist: true }))
-  async generateQuestions(@Body() dto: GenerateQuestionDto) {
-    try {
-      const questions = await this.aiService.generateQuestions(dto);
-      return success(questions);
-    } catch (error) {
-      console.error('AI 调用失败:', error);
-      return fail('AI 服务暂时不可用，请稍后再试');
-    }
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @ApiOkResponse({
+    type: GeneratedQuestion,
+    isArray: true,
+    description: '生成成功',
+  })
+  async generateQuestions(
+    @Body() dto: GenerateQuestionDto,
+  ): Promise<ApiResponse<GeneratedQuestion[]>> {
+    const questions = await this.aiService.generateQuestions(dto);
+    return success(questions);
   }
   // src/ai-exam.controller.ts
   @Post('review-questions')
@@ -175,6 +183,20 @@ export class AiController {
   @Get('current')
   async getCurrentExam() {
     const data = await this.aiService.getCurrentExam();
+    return success(data);
+  }
+
+  @Post('judge')
+  @ApiOperation({ summary: 'AI 自动判题' })
+  async judgeExam(@Body() dto: JudgeExamDto) {
+    const data = await this.aiService.autoJudgeExam(dto);
+    return success({ success: true, data });
+  }
+  @Post('submit')
+  @ApiOperation({ summary: '提交考试' })
+  async submitExam(@Body() dto: JudgeExamDto, @Req() req) {
+    const currentUser = req.user;
+    const data = await this.aiService.submitExam(dto, currentUser);
     return success(data);
   }
 }

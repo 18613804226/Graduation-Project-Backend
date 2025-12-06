@@ -38,8 +38,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // ✅ 白名单：允许游客访问的特殊接口
     const request = context.switchToHttp().getRequest<Request>();
     const path = request.path;
-    const allowedPaths = ['/api/v1/track/page-view', 'api/v1/video/get-url'];
-
+    const allowedPaths = ['/api/v1/track/page-view', '/api/v1/video/get-url'];
     // ✅ 关键：禁止游客执行非 GET 请求
     if (
       user.role === 'GUEST' &&
