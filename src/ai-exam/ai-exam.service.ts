@@ -779,7 +779,7 @@ export class AiService {
 
         // Record "Exam Passed"
         const computedTemplate = await this.examTemplateService.findOne(
-          dto.examId,
+          template.id,
         );
         await this.activityLogService.createLog(
           currentUser.id,
@@ -821,7 +821,7 @@ export class AiService {
           : '考试未通过，请继续努力',
       };
     } catch (e) {
-      console.timeEnd('tx');
+      // console.timeEnd('tx');
       console.error('事务失败:', {
         examId: dto.examId,
         userId: currentUser.id,
