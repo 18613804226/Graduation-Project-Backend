@@ -15,4 +15,7 @@ export class CreateCourseDto {
 
   @IsInt()
   teacherId: number; // 假设你知道教师 ID（后续可优化）
+  @IsOptional()
+  @IsString()
+  category?: string;
 }

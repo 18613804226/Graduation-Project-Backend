@@ -13,4 +13,8 @@ export class UpdateCourseDto {
   @IsOptional()
   @IsString()
   cover?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
 }

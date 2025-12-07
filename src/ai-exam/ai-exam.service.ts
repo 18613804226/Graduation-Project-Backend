@@ -784,7 +784,7 @@ export class AiService {
         await this.activityLogService.createLog(
           currentUser.id,
           'exam_passed',
-          `${userName} passed <a> "${exam.title}" <a/> (Score: ${totalScore}/${computedTemplate.totalScore ?? 100})`,
+          `${userName} passed  "${exam.title}" (Score: ${totalScore}/${computedTemplate.totalScore ?? 100})`,
           {
             targetId: dto.examId,
             targetType: 'Exam',
@@ -797,7 +797,7 @@ export class AiService {
           await this.activityLogService.createLog(
             currentUser.id,
             'certificate_issued',
-            `${userName} received the <a>"${template.name}"<a/> electronic certificate`,
+            `${userName} received the "${template.name}" electronic certificate`,
             {
               targetId: result.certificate.id,
               targetType: 'Certificate',

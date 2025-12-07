@@ -25,6 +25,7 @@ model User {
   resourceDownloads ResourceDownload[]
   examResults       ExamResult[]
   activityLogs      ActivityLog[]
+  lessonProgresses  LessonProgress[]
 }
 
 model Course {
@@ -40,6 +41,7 @@ model Course {
   certificates  Certificate[]
   studyLogs     StudyLog[]
   examTemplates ExamTemplate[]
+  lessons       Lesson[]
 }
 
 model PublishedExam {
@@ -203,4 +205,44 @@ model ActivityLog {
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// 课时表：课程的基本教学单元
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  title       String // 课时标题，如 "HTML 基础语法"
+  description String? // 可选描述
+  courseId    Int // 所属课程
+  moduleId    Int? // 如果未来支持模块/章节，可扩展
+  order       Int      @default(0) // 排序字段，控制课时顺序
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // module Module? @relation(fields: [moduleId], references: [id]) // 未来可启用
+
+  // 关联学习进度记录
+  progresses LessonProgress[]
+
+  @@index([courseId])
+  @@index([order])
+}
+
+// 学习进度表：记录每个用户对每节课的完成状态
+model LessonProgress {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  lessonId    Int
+  completed   Boolean   @default(false)
+  completedAt DateTime? // 首次完成时间（可为空）
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  // ⭐ 核心约束：一个用户对一节课只能有一条进度记录
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
 }

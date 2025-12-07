@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { GetCourseDto } from './dto/get-course.dto';
+import { CourseDetailDto } from './dto/course-detail.dto';
 
 @Injectable()
 export class CourseService {
@@ -121,5 +122,58 @@ export class CourseService {
 
   async remove(id: number) {
     return this.prisma.course.delete({ where: { id } });
+  }
+  // 👇 新增方法：获取课程详情（含课时进度）
+  // src/course/course.service.ts
+
+  async getCourseDetail(id: number, userId: number): Promise<CourseDetailDto> {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      include: {
+        teacher: true,
+        lessons: {
+          include: {
+            progresses: {
+              where: { userId },
+              select: { completed: true },
+            },
+          },
+        },
+        examTemplates: true,
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException('课程不存在');
+    }
+
+    if (!course.teacher) {
+      throw new NotFoundException('课程未绑定教师');
+    }
+
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description || '',
+      cover: course.cover || '',
+      category: course.category || '',
+      createdAt: course.createdAt.toISOString(), // ✅ 转为 ISO 字符串
+      teacher: {
+        id: course.teacher.id,
+        nickname: course.teacher.nickname || '',
+        username: course.teacher.username || '',
+      },
+      lessons: course.lessons.map((lesson) => ({
+        id: lesson.id,
+        title: lesson.title,
+        // ✅ 修复：只要有一条 completed=true 就算完成
+        completed: lesson.progresses.some((p) => p.completed),
+      })),
+      examTemplates: course.examTemplates.map(({ id, name, duration }) => ({
+        id,
+        name,
+        duration,
+      })),
+    };
   }
 }
