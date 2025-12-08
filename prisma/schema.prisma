@@ -217,8 +217,10 @@ model Lesson {
   order       Int      @default(0) // 排序字段，控制课时顺序
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  type        String   @default("text")
+  content     String? // 富文本内容
+  videoUrl    String? // 视频地址
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   // module Module? @relation(fields: [moduleId], references: [id]) // 未来可启用
 
   // 关联学习进度记录
