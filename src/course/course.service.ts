@@ -12,7 +12,7 @@ import { GetCourseDto } from './dto/get-course.dto';
 import { CourseDetailDto } from './dto/course-detail.dto';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-
+import { ContentBlockDto } from './dto/content-block.dto';
 @Injectable()
 export class CourseService {
   constructor(private prisma: PrismaService) {}
@@ -145,6 +145,7 @@ export class CourseService {
               select: { completed: true },
             },
           },
+          orderBy: { order: 'asc' }, // ✅ 修复：确保顺序稳定
         },
         examTemplates: true,
       },
@@ -164,19 +165,26 @@ export class CourseService {
       description: course.description || '',
       cover: course.cover || '',
       category: course.category || '',
-      createdAt: course.createdAt.toISOString(), // ✅ 转为 ISO 字符串
+      createdAt: course.createdAt.toISOString(),
       teacher: {
         id: course.teacher.id,
         nickname: course.teacher.nickname || '',
         username: course.teacher.username || '',
       },
-      lessons: course.lessons.map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title,
-        // ✅ 修复：只要有一条 completed=true 就算完成
-        description: lesson.description || '',
-        completed: lesson.progresses.some((p) => p.completed),
-      })),
+      lessons: course.lessons.map((lesson) => {
+        let content: ContentBlockDto[] = [];
+        if (lesson.content !== null && Array.isArray(lesson.content)) {
+          content = lesson.content as unknown as ContentBlockDto[];
+        }
+
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description || '',
+          completed: lesson.progresses.some((p) => p.completed),
+          content,
+        };
+      }),
       examTemplates: course.examTemplates.map(({ id, name, duration }) => ({
         id,
         name,
@@ -193,12 +201,14 @@ export class CourseService {
     });
 
     const order = maxOrder._max.order ? maxOrder._max.order + 1 : 1;
-
+    // ✅ 转为纯 JSON 数据（剥离 DTO 类型）
+    const contentAsJson = JSON.parse(JSON.stringify(dto.content));
     return this.prisma.lesson.create({
       data: {
         ...dto,
         courseId,
         order,
+        content: contentAsJson, // 👈 确保传入 content
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -214,11 +224,14 @@ export class CourseService {
     if (!existing) {
       throw new NotFoundException('Lesson not found');
     }
+    // 安全序列化 content 为纯 JSON
+    const content = dto.content ? JSON.parse(JSON.stringify(dto.content)) : [];
 
     return this.prisma.lesson.update({
       where: { id: lessonId },
       data: {
         ...dto,
+        content: content, // 👈 确保传入 content
         updatedAt: new Date(),
       },
     });

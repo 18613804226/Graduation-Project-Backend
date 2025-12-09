@@ -1,14 +1,25 @@
-// src/course/dto/update-lesson.dto.ts
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+// src/course/dto/create-lesson.dto.ts
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { ContentBlockDto } from './content-block.dto';
 
 export class UpdateLessonDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
-  title?: string;
+  title: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
   description?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentBlockDto)
+  content: ContentBlockDto[]; // 👈 对应前端 blocks
 }

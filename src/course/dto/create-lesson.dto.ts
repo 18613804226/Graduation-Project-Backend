@@ -1,6 +1,13 @@
 // src/course/dto/create-lesson.dto.ts
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
-
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { ContentBlockDto } from './content-block.dto';
 export class CreateLessonDto {
   @IsNotEmpty()
   @IsString()
@@ -9,4 +16,9 @@ export class CreateLessonDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentBlockDto)
+  content: ContentBlockDto[]; // 👈 对应前端 blocks
 }

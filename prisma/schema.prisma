@@ -218,7 +218,7 @@ model Lesson {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   type        String   @default("text")
-  content     String? // 富文本内容
+  content     Json?    @default("[]") // 👈 默认空数组// 富文本内容
   videoUrl    String? // 视频地址
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   // module Module? @relation(fields: [moduleId], references: [id]) // 未来可启用
@@ -227,7 +227,8 @@ model Lesson {
   progresses LessonProgress[]
 
   @@index([courseId])
-  @@index([order])
+  // ✅ 添加复合索引（关键！）
+  @@index([courseId, order], name: "Lesson_courseId_order_idx")
 }
 
 // 学习进度表：记录每个用户对每节课的完成状态
