@@ -13,9 +13,13 @@ import { CourseDetailDto } from './dto/course-detail.dto';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { ContentBlockDto } from './dto/content-block.dto';
+import { ActivityLogService } from 'src/activity-log/activity-log.service';
 @Injectable()
 export class CourseService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private activityLogService: ActivityLogService,
+  ) {}
 
   async create(createDto: CreateCourseDto) {
     return this.prisma.course.create({
@@ -325,33 +329,67 @@ export class CourseService {
   }
 
   // 👇 添加到 course.service.ts 末尾
+  // course.service.ts
+
+  // course.service.ts
+
   async completeLesson(userId: number, lessonId: number) {
-    // 1. 验证 lesson 是否存在，并属于某个 course（可选）
-    const lesson = await this.prisma.lesson.findUnique({
-      where: { id: lessonId },
-      select: { id: true, courseId: true },
+    // 1. 主事务：只更新进度（核心）
+    const progress = await this.prisma.$transaction(async (prisma) => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true },
+      });
+      if (!user) throw new NotFoundException('User not found');
+
+      const lesson = await prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { id: true, title: true },
+      });
+      if (!lesson) throw new NotFoundException('Lesson not found');
+
+      // upsert 并判断是否是首次完成
+      const existing = await prisma.lessonProgress.findUnique({
+        where: { userId_lessonId: { userId, lessonId } },
+      });
+
+      const updated = await prisma.lessonProgress.upsert({
+        where: { userId_lessonId: { userId, lessonId } },
+        update: { completed: true, completedAt: new Date() },
+        create: {
+          userId,
+          lessonId,
+          completed: true,
+          completedAt: new Date(),
+        },
+      });
+
+      return {
+        ...updated,
+        wasAlreadyCompleted: !!existing?.completed,
+        userName: user.username,
+        lessonTitle: lesson.title,
+      };
     });
 
-    if (!lesson) {
-      throw new NotFoundException('Lesson not found');
+    // 2. 只有首次完成，才记录日志（幂等）
+    if (!progress.wasAlreadyCompleted) {
+      try {
+        await this.activityLogService.createLog(
+          userId,
+          'lesson_completed',
+          `${progress.userName} completed "${progress.lessonTitle}"`,
+          {
+            targetId: lessonId,
+            targetType: 'Lesson',
+            isPublic: true,
+          },
+        );
+      } catch (err) {
+        console.warn('Failed to create lesson completion log', err);
+        // 不抛错，不影响主流程
+      }
     }
-
-    // 2. 创建或更新 LessonProgress
-    await this.prisma.lessonProgress.upsert({
-      where: {
-        userId_lessonId: { userId, lessonId }, // 复合唯一键
-      },
-      update: {
-        completed: true,
-        completedAt: new Date(),
-      },
-      create: {
-        userId,
-        lessonId,
-        completed: true,
-        completedAt: new Date(),
-      },
-    });
 
     return { success: true, message: 'Lesson marked as completed' };
   }

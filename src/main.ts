@@ -5,6 +5,8 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exception.filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { join } from 'path';
+import * as express from 'express'; // 👈 添加这一行！
 // import * as dotenv from 'dotenv';
 // import * as fs from 'fs';
 // import { JwtAuthGuard } from './auth/jwt-auth.guard';
@@ -59,7 +61,9 @@ async function bootstrap() {
   );
   // 5. ✅ 全局异常过滤器（必须在 listen 之前！）
   app.useGlobalFilters(new AllExceptionsFilter());
-
+  // 👇 关键：提供静态文件服务
+  // ✅ 正确：使用 process.cwd() 指向项目根目录
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   // 6. 🟢 最后启动服务
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   await app.listen(port);
