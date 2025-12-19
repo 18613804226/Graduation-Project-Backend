@@ -1,4 +1,12 @@
 // prisma/seed.ts
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(__dirname, '../.env') });
+
+// 👇 强制提前读取 DATABASE_URL
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set');
+}
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
