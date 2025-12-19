@@ -45,7 +45,9 @@ export class UserService {
       realName: user.name || user.username,
       role: user.role,
       roles: [user.role],
-      avatar: user.avatar || 'https://via.placeholder.com/100',
+      avatar:
+        user.avatar ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || user.name || '用户')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true`,
     };
   }
   // 根据ID查询用户
@@ -63,7 +65,9 @@ export class UserService {
       username: user.username,
       name: user.name,
       roles: [user.role], // 映射 role 字段为 roles 数组
-      avatar: user.avatar || 'https://via.placeholder.com/100',
+      avatar:
+        user.avatar ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || user.name || '用户')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true`,
     };
   }
   // ✅ 新增：获取用户权限码列表
@@ -156,7 +160,9 @@ export class UserService {
           // email: u.email || '',
           role: u.role,
           // status: u.status,
-          avatar: u.avatar || 'https://via.placeholder.com/100',
+          avatar:
+            u.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username || u.name || '用户')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true`,
           createdAt: u.createdAt.toISOString(),
         })),
         total,
