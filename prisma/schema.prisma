@@ -26,6 +26,7 @@ model User {
   examResults       ExamResult[]
   activityLogs      ActivityLog[]
   lessonProgresses  LessonProgress[]
+  notifications     Notification[]
 }
 
 model Course {
@@ -248,4 +249,20 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([userId])
   @@index([lessonId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  type      String // e.g., "CERTIFICATE_ISSUED", "EXAM_PASSED"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
 }

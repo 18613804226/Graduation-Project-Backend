@@ -26,6 +26,7 @@ import { TrackModule } from './track/track.module';
 import { HealthModule } from './health/health.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { UploadModule } from './upload/upload.module';
+import { NotificationModule } from './notification/notification.module';
 @Module({
   controllers: [
     /* ... */
@@ -54,6 +55,7 @@ import { UploadModule } from './upload/upload.module';
     HealthModule,
     ActivityLogModule,
     UploadModule,
+    NotificationModule,
     // ...其他模块
   ],
 })

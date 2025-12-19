@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config'; // ✅ 必须导入（用于 Conf
 import { CertificateModule } from 'src/certificate/certificate.module';
 import { ActivityLogModule } from 'src/activity-log/activity-log.module';
 import { ExamTemplateModule } from 'src/exam-template/exam-template.module';
+import { NotificationModule } from 'src/notification/notification.module';
 @Module({
   imports: [
     HttpModule, // ✅ 提供 HttpService
@@ -13,6 +14,7 @@ import { ExamTemplateModule } from 'src/exam-template/exam-template.module';
     CertificateModule,
     ActivityLogModule,
     ExamTemplateModule,
+    NotificationModule,
     // 其他模块...
   ],
   controllers: [AiController],

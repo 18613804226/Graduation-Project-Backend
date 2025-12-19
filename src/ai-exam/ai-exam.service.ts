@@ -17,6 +17,7 @@ import { JudgeExamDto } from './dto/judge-xam.dto';
 import { CertificateService } from '../certificate/certificate.service'; // ✅ 引入
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { ExamTemplateService } from '../exam-template/exam-template.service';
+import { NotificationService } from 'src/notification/notification.service';
 
 type Option = string | { key?: string; text?: string };
 // Section 生成结果类型
@@ -43,6 +44,7 @@ export class AiService {
     private certificateService: CertificateService,
     private activityLogService: ActivityLogService,
     private examTemplateService: ExamTemplateService,
+    private readonly notificationService: NotificationService,
   ) {
     this.DASHSCOPE_API_KEY =
       this.configService.get<string>('DASHSCOPE_API_KEY')!;
@@ -805,6 +807,18 @@ export class AiService {
             },
           );
         }
+
+        // ✅✅✅ 新增：发送站内通知
+        // ✅✅✅ 修改这里：只要通过就发通知
+        await this.notificationService.create(currentUser.id, {
+          title: result.certificate
+            ? '🎉 Certificate Issued!'
+            : '✅ Exam Passed!',
+          content: result.certificate
+            ? `Congratulations! Your certificate for "${exam.title}" has been issued.`
+            : `Great job! You passed "${exam.title}". (Score: ${totalScore}/${computedTemplate.totalScore ?? 100})`,
+          type: result.certificate ? 'CERTIFICATE_ISSUED' : 'EXAM_PASSED',
+        });
       }
 
       // console.timeEnd('tx');
