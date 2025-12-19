@@ -182,7 +182,7 @@ export class AuthService {
         roles: [user.role],
         avatar:
           user.avatar ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || user.name || 'Guest')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true`,
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || user.name || 'Guest')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true&font-size=0.3`,
       },
     };
   }

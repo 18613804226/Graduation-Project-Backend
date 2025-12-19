@@ -23,7 +23,6 @@ export class NotificationService {
         ...createDto,
       },
     });
-
     // ✅ 推送实时通知！
     this.notificationGateway.emitToUser(userId, 'new_notification', {
       id: notification.id,
@@ -31,6 +30,9 @@ export class NotificationService {
       content: notification.content,
       type: notification.type,
       createdAt: notification.createdAt,
+      // ✅ 新增字段
+      avatar:
+        'https://ui-avatars.com/api/?name=system&size=128&background=6366f1&color=fff&rounded=true&bold=true&font-size=0.3&uppercase=true',
     });
 
     return notification;
@@ -56,10 +58,18 @@ export class NotificationService {
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
+      // 不加任何 include/select，就返回原始字段
     });
 
+    // ✅ 手动加默认头像和发送者名（所有通知统一“系统”头像）
+    const formattedItems = items.map((item) => ({
+      ...item,
+      avatar:
+        'https://ui-avatars.com/api/?name=system&size=128&background=6366f1&color=fff&rounded=true&bold=true&font-size=0.3&uppercase=true&format=svg',
+    }));
+
     return {
-      items,
+      items: formattedItems,
       meta: {
         total,
         page,
