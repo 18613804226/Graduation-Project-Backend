@@ -12,12 +12,15 @@ export class UpdateUserDto {
 
   @IsString()
   @MinLength(6)
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
-    {
-      message: '密码必须包含大小写字母、数字和特殊字符',
-    },
-  )
+  // @Matches(
+  //   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
+  //   {
+  //     message: '密码必须包含大小写字母、数字和特殊字符',
+  //   },
+  // )
+  @IsOptional()
+  email?: string;
+
   @IsOptional()
   newPassword?: string;
 

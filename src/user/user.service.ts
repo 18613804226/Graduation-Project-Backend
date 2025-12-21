@@ -45,6 +45,7 @@ export class UserService {
       realName: user.name || user.username,
       role: user.role,
       roles: [user.role],
+      email: user.email ?? '', // ← 新增 email 字段（如果数据库没有就返回 null）
       avatar:
         user.avatar ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || user.name || '用户')}&size=128&background=random&color=fff&rounded=true&bold=true&uppercase=true&font-size=0.3`,
@@ -214,7 +215,7 @@ export class UserService {
     dto: UpdateUserDto,
     currentUser: User,
   ): Promise<User> {
-    const { name, username, newPassword, oldPassword, role } = dto;
+    const { name, username, newPassword, oldPassword, role, email } = dto; // ← 新增 email
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -223,14 +224,32 @@ export class UserService {
 
     const updateData: Partial<User> = {};
 
-    // 处理密码更新
+    // 处理邮箱更新
+    if (email !== undefined) {
+      // 简单邮箱格式校验（可替换为 Zod 或 class-validator）
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new BadRequestException('Invalid email format.');
+      }
+
+      // 检查邮箱是否已被其他用户使用（排除自己）
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingUser && existingUser.id !== userId) {
+        throw new BadRequestException('Email already in use.');
+      }
+
+      updateData.email = email;
+    }
+
+    // 处理密码更新（原逻辑不变）
     if (newPassword) {
       if (!oldPassword) {
         throw new BadRequestException(
           'Old password is required when changing password.',
         );
       }
-      // 检查用户是否有密码
       if (!user.password) {
         throw new BadRequestException(
           'The account does not have a password and cannot be changed.',

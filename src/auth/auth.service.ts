@@ -73,13 +73,24 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<any> {
-    const { password, username } = dto;
+    const { password, username, email } = dto; // ← 新增 email
 
+    // 校验用户名是否已存在
     const existingUsername = await this.prisma.user.findUnique({
       where: { username },
     });
     if (existingUsername) {
-      throw new Error('用户名已存在');
+      throw new Error('Username already exists.');
+    }
+
+    // ✅ 新增：校验邮箱是否已存在（如果邮箱为空则跳过唯一性校验）
+    if (email) {
+      const existingEmail = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingEmail) {
+        throw new Error('The email address has already been registered.');
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,16 +98,18 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         username,
+        email, // ← 保存邮箱
         password: hashedPassword,
         role: 'STUDENT',
       },
     });
 
-    // ✅ 统一使用 JwtService
+    // 生成 JWT（sub 用 user.id）
     const accessToken = this.jwtService.sign({
       sub: user.id,
       username: user.username,
       role: user.role,
+      email: user.email, // 可选：把 email 也放进 token（方便前端使用）
     });
 
     return {
